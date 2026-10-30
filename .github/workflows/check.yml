@@ -1,0 +1,23 @@
+name: Check sources
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate source packages
+        run: python3 scripts/build_source.py
+      - name: Check sources and configuration entries
+        run: node scripts/check_sources.mjs
+      - name: Check generated files are committed
+        run: git diff --exit-code -- index.js novels.js cloud-drives.js
+      - name: Check whitespace
+        run: git diff --check
