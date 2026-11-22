@@ -2,6 +2,8 @@
 
 第一次制作源，请从 [完整制作指南](../nori-source-authoring.md) 开始。当前资料描述 Nori JSON 源；具体 App 是否支持某项能力，以实际安装的 App 和 [host.json](host.json) 为准。
 
+使用 Agent 时，参阅 [AI Agent 制作指南](../nori-source-agent-guide.md)及其中可直接复制的任务提示词。
+
 | 文件 | 用途 |
 | --- | --- |
 | [sdk.md](sdk.md) / [sdk.d.ts](sdk.d.ts) | SDK 方法与类型 |

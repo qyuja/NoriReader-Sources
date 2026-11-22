@@ -3,6 +3,7 @@
 本仓库维护 Nori JSON 源、制作文档、作者工具与配套示例。
 
 - 文档入口为 `docs/nori-source-authoring.md`，SDK、Schema、模板和能力清单位于 `docs/nori-source/`。文档名称与路径使用 Nori JSON 源，不按协议代次命名。
+- Agent 制作、批量适配或修复源时，先读取 `docs/nori-source-agent-guide.md`，按其中的调查、实现、分层验证和交付流程执行。
 - 发布入口是自包含 `.nori.json`；YAML 和 ES 模块是作者输入，示例修改后同步重新打包。保留格式字段、能力标识、源 ID 和站点 ID 的实际契约。
 - `nori-sources.nori.json` 是稳定的已验证合集入口，草稿放在 `drafts/` 并在 README 说明验证状态。发布前校验合集结构、逐个子源及实际导入数量；保持源与已验收产物一致，避免上传本机路径或日志。
 - 合集分组使用根 `groups` 与成员 `group`，可分为小说、漫画和 NSFW；分组元数据不改动子源程序与账号身份。

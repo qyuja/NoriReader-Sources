@@ -6,6 +6,7 @@ Nori JSON 源合集、制作指南、SDK 参考、打包工具与配套示例。
 
 从[完整制作指南](docs/nori-source-authoring.md)开始，依次接入搜索、分类、详情、章节目录、小说正文或漫画图片，再验证完整阅读流程。
 
+- [AI Agent 制作指南与任务提示词](docs/nori-source-agent-guide.md)
 - [SDK、Schema 与作者资料](docs/nori-source/README.md)
 - [打包与静态检查](docs/nori-source/packager.md)
 - [完整 HTML 小说站模板](docs/nori-source/examples/web-novel/source.yaml)
