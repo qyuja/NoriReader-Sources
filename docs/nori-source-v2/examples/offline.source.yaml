@@ -1,0 +1,30 @@
+format: nori-source
+schemaVersion: 2
+id: org.norireader.example.offline
+name: v2 离线示例
+version: 1.0.0
+description: 用于确认导入、搜索、目录续页、阅读版本和原生阅读器的示例，不访问网络。
+requires: [core-v2]
+modules:
+  offline.js: {file: offline.js}
+sites:
+  - id: notes
+    name: 山海札记
+    kinds: [novel]
+    requires: [script-v2, state-v1]
+    settings:
+      - id: quote
+        title: 显示章末摘句
+        control: toggle
+        defaultValue: true
+    actions:
+      - id: reset
+        title: 重置示例阅读计数
+        effect: read
+    operations:
+      catalog: {script: {module: offline.js, export: catalog}}
+      search: {script: {module: offline.js, export: search}}
+      detail: {script: {module: offline.js, export: detail}}
+      chapters: {script: {module: offline.js, export: chapters}}
+      content: {script: {module: offline.js, export: content}}
+      action: {script: {module: offline.js, export: action}}

@@ -1,0 +1,337 @@
+{
+  "format": "nori-source",
+  "schemaVersion": 2,
+  "id": "org.example.nori.json",
+  "name": "JSON API 声明计划示例",
+  "version": "1.0.0",
+  "requires": [
+    "core-v2"
+  ],
+  "sites": [
+    {
+      "id": "api",
+      "name": "示例 JSON 小说 API",
+      "kinds": [
+        "novel"
+      ],
+      "requires": [
+        "plan-v1",
+        "http-v1",
+        "json-v1",
+        "jsonpath-v1"
+      ],
+      "network": {
+        "endpoints": {
+          "api": {
+            "baseURL": "https://api.example.com/",
+            "allowedHosts": [
+              "api.example.com"
+            ]
+          }
+        }
+      },
+      "filters": {
+        "search": [
+          {
+            "id": "status",
+            "title": "状态",
+            "control": "select",
+            "defaultValue": "all",
+            "options": [
+              {
+                "value": "all",
+                "title": "全部"
+              },
+              {
+                "value": "completed",
+                "title": "完结"
+              }
+            ]
+          }
+        ]
+      },
+      "operations": {
+        "search": {
+          "plan": {
+            "request": {
+              "endpoint": "api",
+              "method": "GET",
+              "path": "/books/search",
+              "query": {
+                "q": {
+                  "input": "/query"
+                },
+                "cursor": {
+                  "input": "/cursor"
+                },
+                "status": {
+                  "input": "/filters/status"
+                }
+              }
+            },
+            "response": {
+              "format": "json"
+            },
+            "checks": [
+              {
+                "value": {
+                  "jsonpath": "$.code"
+                },
+                "equals": 0,
+                "error": "source_error",
+                "message": "接口未返回成功状态"
+              }
+            ],
+            "result": {
+              "fields": {
+                "items": {
+                  "each": {
+                    "select": {
+                      "jsonpath": "$.data.books[*]",
+                      "all": true
+                    },
+                    "fields": {
+                      "id": {
+                        "jsonpath": "$.id"
+                      },
+                      "title": {
+                        "jsonpath": "$.title"
+                      },
+                      "kind": "novel",
+                      "authors": {
+                        "jsonpath": "$.authors[*]",
+                        "all": true
+                      },
+                      "summary": {
+                        "jsonpath": "$.summary"
+                      },
+                      "metadata": {
+                        "fields": {
+                          "status": {
+                            "jsonpath": "$.status"
+                          },
+                          "wordCount": {
+                            "jsonpath": "$.wordCount"
+                          }
+                        }
+                      },
+                      "locator": {
+                        "fields": {
+                          "bookID": {
+                            "jsonpath": "$.id"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "pagination": {
+              "mode": "token",
+              "next": {
+                "jsonpath": "$.data.nextCursor"
+              }
+            }
+          }
+        },
+        "detail": {
+          "plan": {
+            "request": {
+              "endpoint": "api",
+              "method": "GET",
+              "path": "/books/{id}",
+              "parameters": {
+                "id": {
+                  "input": "/book/locator/bookID"
+                }
+              }
+            },
+            "response": {
+              "format": "json"
+            },
+            "checks": [
+              {
+                "value": {
+                  "jsonpath": "$.code"
+                },
+                "equals": 0,
+                "error": "source_error",
+                "message": "接口未返回成功状态"
+              }
+            ],
+            "result": {
+              "fields": {
+                "book": {
+                  "fields": {
+                    "id": {
+                      "jsonpath": "$.data.book.id"
+                    },
+                    "title": {
+                      "jsonpath": "$.data.book.title"
+                    },
+                    "kind": "novel",
+                    "authors": {
+                      "jsonpath": "$.data.book.authors[*]",
+                      "all": true
+                    },
+                    "summary": {
+                      "jsonpath": "$.data.book.summary"
+                    },
+                    "metadata": {
+                      "fields": {
+                        "status": {
+                          "jsonpath": "$.data.book.status"
+                        },
+                        "wordCount": {
+                          "jsonpath": "$.data.book.wordCount"
+                        }
+                      }
+                    },
+                    "locator": {
+                      "fields": {
+                        "bookID": {
+                          "jsonpath": "$.data.book.id"
+                        }
+                      }
+                    }
+                  }
+                },
+                "editions": {
+                  "literal": [
+                    {
+                      "id": "online",
+                      "title": "在线章节",
+                      "kind": "chapters"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "chapters": {
+          "plan": {
+            "request": {
+              "endpoint": "api",
+              "method": "GET",
+              "path": "/books/{id}/chapters",
+              "parameters": {
+                "id": {
+                  "input": "/book/locator/bookID"
+                }
+              },
+              "query": {
+                "page": {
+                  "input": "/page"
+                }
+              }
+            },
+            "response": {
+              "format": "json"
+            },
+            "checks": [
+              {
+                "value": {
+                  "jsonpath": "$.code"
+                },
+                "equals": 0,
+                "error": "source_error",
+                "message": "接口未返回成功状态"
+              }
+            ],
+            "result": {
+              "fields": {
+                "items": {
+                  "each": {
+                    "select": {
+                      "jsonpath": "$.data.chapters[*]",
+                      "all": true
+                    },
+                    "fields": {
+                      "kind": "chapter",
+                      "id": {
+                        "jsonpath": "$.id"
+                      },
+                      "title": {
+                        "jsonpath": "$.title"
+                      },
+                      "locator": {
+                        "fields": {
+                          "chapterID": {
+                            "jsonpath": "$.id"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "pagination": {
+              "mode": "page",
+              "hasMore": {
+                "jsonpath": "$.data.hasMore"
+              }
+            }
+          }
+        },
+        "content": {
+          "plan": {
+            "request": {
+              "endpoint": "api",
+              "method": "GET",
+              "path": "/chapters/{id}",
+              "parameters": {
+                "id": {
+                  "input": "/chapter/locator/chapterID"
+                }
+              }
+            },
+            "response": {
+              "format": "json"
+            },
+            "checks": [
+              {
+                "value": {
+                  "jsonpath": "$.code"
+                },
+                "equals": 0,
+                "error": "source_error",
+                "message": "接口未返回成功状态"
+              }
+            ],
+            "result": {
+              "fields": {
+                "id": {
+                  "jsonpath": "$.data.id"
+                },
+                "chapterID": {
+                  "jsonpath": "$.data.id"
+                },
+                "kind": "novel",
+                "title": {
+                  "jsonpath": "$.data.title"
+                },
+                "blocks": {
+                  "each": {
+                    "select": {
+                      "jsonpath": "$.data.paragraphs[*]",
+                      "all": true
+                    },
+                    "fields": {
+                      "kind": "paragraph",
+                      "text": {
+                        "jsonpath": "$"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,318 @@
+{
+  "format": "nori-source",
+  "schemaVersion": 2,
+  "id": "org.example.nori.html",
+  "name": "HTML 声明计划示例",
+  "version": "1.0.0",
+  "author": "随阅协议示例",
+  "requires": [
+    "core-v2"
+  ],
+  "sites": [
+    {
+      "id": "books",
+      "name": "示例 HTML 小说站",
+      "kinds": [
+        "novel"
+      ],
+      "requires": [
+        "plan-v1",
+        "http-v1",
+        "html-v1",
+        "css-v1"
+      ],
+      "network": {
+        "endpoints": {
+          "main": {
+            "baseURL": "https://books.example.com/",
+            "allowedHosts": [
+              "books.example.com"
+            ]
+          }
+        },
+        "policy": {
+          "maxConcurrency": 2,
+          "minIntervalMs": 200
+        }
+      },
+      "presentation": {
+        "group": "小说"
+      },
+      "operations": {
+        "search": {
+          "plan": {
+            "request": {
+              "endpoint": "main",
+              "method": "GET",
+              "path": "/search",
+              "query": {
+                "q": {
+                  "input": "/query"
+                },
+                "page": {
+                  "input": "/page"
+                }
+              }
+            },
+            "response": {
+              "format": "html"
+            },
+            "result": {
+              "fields": {
+                "items": {
+                  "each": {
+                    "select": {
+                      "css": ".book",
+                      "read": "node",
+                      "all": true
+                    },
+                    "fields": {
+                      "id": {
+                        "css": "",
+                        "attr": "data-book-id"
+                      },
+                      "title": {
+                        "css": ".title",
+                        "read": "text"
+                      },
+                      "kind": "novel",
+                      "authors": {
+                        "css": ".author",
+                        "read": "text",
+                        "all": true
+                      },
+                      "locator": {
+                        "fields": {
+                          "url": {
+                            "css": "a.details",
+                            "attr": "href",
+                            "steps": [
+                              {
+                                "op": "trim"
+                              },
+                              {
+                                "op": "emptyToNull"
+                              },
+                              {
+                                "op": "resolveURL"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "pagination": {
+              "mode": "nextURL",
+              "next": {
+                "css": "a.next",
+                "attr": "href",
+                "steps": [
+                  {
+                    "op": "trim"
+                  },
+                  {
+                    "op": "emptyToNull"
+                  },
+                  {
+                    "op": "resolveURL"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "detail": {
+          "plan": {
+            "request": {
+              "endpoint": "main",
+              "method": "GET",
+              "url": {
+                "input": "/book/locator/url"
+              }
+            },
+            "response": {
+              "format": "html"
+            },
+            "result": {
+              "fields": {
+                "book": {
+                  "fields": {
+                    "id": {
+                      "css": ".book-info",
+                      "attr": "data-book-id"
+                    },
+                    "title": {
+                      "css": "h1",
+                      "read": "text"
+                    },
+                    "kind": "novel",
+                    "authors": {
+                      "css": ".author",
+                      "read": "text",
+                      "all": true
+                    },
+                    "summary": {
+                      "css": ".intro",
+                      "read": "text"
+                    },
+                    "locator": {
+                      "fields": {
+                        "url": {
+                          "input": "/book/locator/url"
+                        },
+                        "tocURL": {
+                          "css": "a.catalog",
+                          "attr": "href",
+                          "steps": [
+                            {
+                              "op": "trim"
+                            },
+                            {
+                              "op": "emptyToNull"
+                            },
+                            {
+                              "op": "resolveURL"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "editions": {
+                  "literal": [
+                    {
+                      "id": "online",
+                      "title": "在线阅读",
+                      "kind": "chapters"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "chapters": {
+          "plan": {
+            "request": {
+              "endpoint": "main",
+              "method": "GET",
+              "url": {
+                "input": "/book/locator/tocURL"
+              }
+            },
+            "response": {
+              "format": "html"
+            },
+            "result": {
+              "fields": {
+                "items": {
+                  "each": {
+                    "select": {
+                      "css": "#chapters a",
+                      "read": "node",
+                      "all": true
+                    },
+                    "fields": {
+                      "kind": "chapter",
+                      "id": {
+                        "css": "",
+                        "attr": "data-chapter-id"
+                      },
+                      "title": {
+                        "css": "",
+                        "read": "text"
+                      },
+                      "locator": {
+                        "fields": {
+                          "url": {
+                            "css": "",
+                            "attr": "href",
+                            "steps": [
+                              {
+                                "op": "trim"
+                              },
+                              {
+                                "op": "emptyToNull"
+                              },
+                              {
+                                "op": "resolveURL"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "pagination": {
+              "mode": "nextURL",
+              "next": {
+                "css": "a.toc-next",
+                "attr": "href",
+                "steps": [
+                  {
+                    "op": "trim"
+                  },
+                  {
+                    "op": "emptyToNull"
+                  },
+                  {
+                    "op": "resolveURL"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "content": {
+          "plan": {
+            "request": {
+              "endpoint": "main",
+              "method": "GET",
+              "url": {
+                "input": "/chapter/locator/url"
+              }
+            },
+            "response": {
+              "format": "html"
+            },
+            "result": {
+              "fields": {
+                "id": {
+                  "input": "/chapter/id"
+                },
+                "chapterID": {
+                  "input": "/chapter/id"
+                },
+                "kind": "novel",
+                "title": {
+                  "css": "h1",
+                  "read": "text"
+                },
+                "blocks": {
+                  "blocks": {
+                    "select": {
+                      "css": "#content",
+                      "read": "node"
+                    },
+                    "format": "html",
+                    "remove": [
+                      ".advertisement"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

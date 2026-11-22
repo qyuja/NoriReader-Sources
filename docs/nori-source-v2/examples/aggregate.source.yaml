@@ -1,0 +1,87 @@
+# 作者配置：打包器只读取文件，不执行 aggregate.js。
+# 与 script-aggregate.nori.json 描述相同的合成接口。
+format: nori-source
+schemaVersion: 2
+id: org.example.nori.aggregate
+name: 脚本聚合源示例
+version: 1.0.0
+requires: [core-v2]
+description: 合成示例，不包含书山、魔丸或光遇代码，也不连接真实服务。
+
+modules:
+  aggregate.js:
+    file: aggregate.js
+
+sites:
+  - id: aggregate
+    name: 示例小说与漫画聚合
+    kinds: [novel, comic]
+    requires:
+      - script-v2
+      - plan-v1
+      - http-v1
+      - json-v1
+      - jsonpath-v1
+      - codec-v1
+      - auth-form-v1
+
+    network:
+      endpoints:
+        api:
+          baseURL: https://aggregate.example.com/
+          allowedHosts: [aggregate.example.com]
+        files:
+          baseURL: https://files.example.com/
+          allowedHosts: [files.example.com]
+      policy:
+        maxConcurrency: 2
+        maxRequests: 12
+
+    sessions:
+      member:
+        kind: form
+        endpoint: api
+        fields:
+          - {id: username, title: 账号, type: text}
+          - {id: password, title: 密码, type: password}
+        request:
+          endpoint: api
+          method: POST
+          path: /session
+          json:
+            username: {credential: username}
+            password: {credential: password}
+        response: {format: json}
+        token: {jsonpath: $.token}
+        credential: {header: X-API-Key, encoding: plain}
+        check:
+          plan:
+            request:
+              endpoint: api
+              method: GET
+              path: /session/status
+              session: member
+            response: {format: json}
+            result:
+              fields:
+                authenticated: {jsonpath: $.authenticated}
+                displayName: {jsonpath: $.displayName}
+
+    settings:
+      - id: mode
+        title: 内容类型
+        control: select
+        defaultValue: all
+        options:
+          - {value: all, title: 全部}
+          - {value: novel, title: 小说}
+          - {value: comic, title: 漫画}
+
+    presentation: {group: 聚合}
+
+    operations:
+      search: {script: {module: aggregate.js, export: search}}
+      detail: {script: {module: aggregate.js, export: detail}}
+      chapters: {script: {module: aggregate.js, export: chapters}}
+      content: {script: {module: aggregate.js, export: content}}
+      resolveResource: {script: {module: aggregate.js, export: resolveResource}}

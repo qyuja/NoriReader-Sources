@@ -1,0 +1,174 @@
+{
+  "format": "nori-source",
+  "schemaVersion": 2,
+  "id": "org.example.nori.aggregate",
+  "name": "脚本聚合源示例",
+  "version": "1.0.0",
+  "requires": [
+    "core-v2"
+  ],
+  "description": "合成示例，不包含书山、魔丸或光遇代码，也不连接真实服务。",
+  "sites": [
+    {
+      "id": "aggregate",
+      "name": "示例小说与漫画聚合",
+      "kinds": [
+        "novel",
+        "comic"
+      ],
+      "requires": [
+        "script-v2",
+        "plan-v1",
+        "http-v1",
+        "json-v1",
+        "jsonpath-v1",
+        "codec-v1",
+        "auth-form-v1"
+      ],
+      "network": {
+        "endpoints": {
+          "api": {
+            "baseURL": "https://aggregate.example.com/",
+            "allowedHosts": [
+              "aggregate.example.com"
+            ]
+          },
+          "files": {
+            "baseURL": "https://files.example.com/",
+            "allowedHosts": [
+              "files.example.com"
+            ]
+          }
+        },
+        "policy": {
+          "maxConcurrency": 2,
+          "maxRequests": 12
+        }
+      },
+      "sessions": {
+        "member": {
+          "kind": "form",
+          "endpoint": "api",
+          "fields": [
+            {
+              "id": "username",
+              "title": "账号",
+              "type": "text"
+            },
+            {
+              "id": "password",
+              "title": "密码",
+              "type": "password"
+            }
+          ],
+          "request": {
+            "endpoint": "api",
+            "method": "POST",
+            "path": "/session",
+            "json": {
+              "username": {
+                "credential": "username"
+              },
+              "password": {
+                "credential": "password"
+              }
+            }
+          },
+          "response": {
+            "format": "json"
+          },
+          "token": {
+            "jsonpath": "$.token"
+          },
+          "credential": {
+            "header": "X-API-Key",
+            "encoding": "plain"
+          },
+          "check": {
+            "plan": {
+              "request": {
+                "endpoint": "api",
+                "method": "GET",
+                "path": "/session/status",
+                "session": "member"
+              },
+              "response": {
+                "format": "json"
+              },
+              "result": {
+                "fields": {
+                  "authenticated": {
+                    "jsonpath": "$.authenticated"
+                  },
+                  "displayName": {
+                    "jsonpath": "$.displayName"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "settings": [
+        {
+          "id": "mode",
+          "title": "内容类型",
+          "control": "select",
+          "defaultValue": "all",
+          "options": [
+            {
+              "value": "all",
+              "title": "全部"
+            },
+            {
+              "value": "novel",
+              "title": "小说"
+            },
+            {
+              "value": "comic",
+              "title": "漫画"
+            }
+          ]
+        }
+      ],
+      "presentation": {
+        "group": "聚合"
+      },
+      "operations": {
+        "search": {
+          "script": {
+            "module": "aggregate.js",
+            "export": "search"
+          }
+        },
+        "detail": {
+          "script": {
+            "module": "aggregate.js",
+            "export": "detail"
+          }
+        },
+        "chapters": {
+          "script": {
+            "module": "aggregate.js",
+            "export": "chapters"
+          }
+        },
+        "content": {
+          "script": {
+            "module": "aggregate.js",
+            "export": "content"
+          }
+        },
+        "resolveResource": {
+          "script": {
+            "module": "aggregate.js",
+            "export": "resolveResource"
+          }
+        }
+      }
+    }
+  ],
+  "modules": {
+    "aggregate.js": "// Nori Source v2 draft example. All endpoints and API shapes are fictional.\n// This module is also embedded verbatim in script-aggregate.nori.json.\n\nfunction payload(response, ctx) {\n  const value = /** @type {any} */ (response.json());\n  if (!value || typeof value !== 'object' || Array.isArray(value)) {\n    ctx.fail('value_invalid', '接口响应不是对象', '/response');\n  }\n  if (value.code === 401) ctx.fail('auth_required', '当前源需要登录');\n  if (value.code === 403) ctx.fail('access_denied', '当前账号不能读取此内容');\n  if (value.code === 429) ctx.fail('rate_limited', '源站要求稍后再试');\n  if (value.code !== 0) ctx.fail('source_error', '聚合接口未返回成功状态');\n  return value.data;\n}\n\nfunction nextToken(value, ctx) {\n  if (value === null) return null;\n  if (typeof value !== 'string' || !value.length) {\n    ctx.fail('value_invalid', '接口未返回合法续页标识', '/response/data/nextCursor');\n  }\n  return { kind: 'token', value: value };\n}\n\nfunction sourceCursor(input, ctx) {\n  if (input.cursor !== null && typeof input.cursor !== 'string') {\n    ctx.fail('value_invalid', '当前接口的续页标识必须是字符串', '/input/cursor');\n  }\n  return input.cursor;\n}\n\nfunction locatorID(locator, name, ctx) {\n  const value = locator && locator[name];\n  if (typeof value !== 'string' || !value.length) {\n    ctx.fail('value_invalid', '源定位缺少所需标识', '/input/locator');\n  }\n  return value;\n}\n\nfunction memberSession(input) {\n  return input.sessionStatus.member && input.sessionStatus.member.authenticated\n    ? 'member' : undefined;\n}\n\nfunction bookModel(book) {\n  return {\n    id: book.id,\n    title: book.title,\n    kind: book.kind,\n    authors: book.authors,\n    summary: book.summary,\n    metadata: {\n      status: book.status,\n      wordCount: book.wordCount,\n      attributes: book.attributes\n    },\n    cover: book.coverURL ? {\n      id: 'cover',\n      role: 'cover',\n      mediaType: book.coverMediaType,\n      source: { url: book.coverURL, endpoint: 'files' }\n    } : undefined,\n    locator: { bookID: book.id, platform: book.platform }\n  };\n}\n\n/** @param {Nori.SearchInput} input @param {Nori.Context} ctx */\nexport async function search(input, ctx) {\n  // A public digest illustrates computed headers; it is not an account secret.\n  const digest = await ctx.codec.digest('SHA-256', input.query);\n  const response = await ctx.http.request({\n    endpoint: 'api', method: 'GET', path: '/search',\n    session: memberSession(input),\n    query: {\n      q: input.query,\n      cursor: sourceCursor(input, ctx),\n      mode: input.contentKind || input.settings.mode\n    },\n    headers: { 'X-Query-Digest': digest }\n  });\n  const data = payload(response, ctx);\n  return { items: data.books.map(bookModel), next: nextToken(data.nextCursor, ctx) };\n}\n\n/** @param {Nori.DetailInput} input @param {Nori.Context} ctx */\nexport async function detail(input, ctx) {\n  const response = await ctx.http.request({\n    endpoint: 'api', method: 'GET', path: '/books/{id}',\n    parameters: { id: locatorID(input.book.locator, 'bookID', ctx) },\n    session: memberSession(input)\n  });\n  const data = payload(response, ctx);\n  const book = bookModel(data.book);\n  /** @type {Nori.Edition[]} */\n  const editions = [{ id: 'online', title: '在线阅读', kind: 'chapters' }];\n  if (data.epubFileID) {\n    editions.push({\n      id: 'epub', title: 'EPUB', kind: 'file',\n      resource: {\n        id: 'epub', role: 'publication', mediaType: 'application/epub+zip',\n        source: { locator: { fileID: data.epubFileID } }\n      }\n    });\n  }\n  return { book: book, editions: editions };\n}\n\n/** @param {Nori.ChaptersInput} input @param {Nori.Context} ctx */\nexport async function chapters(input, ctx) {\n  const response = await ctx.http.request({\n    endpoint: 'api', method: 'GET', path: '/books/{id}/chapters',\n    parameters: { id: locatorID(input.book.locator, 'bookID', ctx) },\n    query: { cursor: sourceCursor(input, ctx) },\n    session: memberSession(input)\n  });\n  const data = payload(response, ctx);\n  const items = data.items.map(function (item) {\n    if (item.kind === 'section') {\n      return { kind: 'section', id: item.id, title: item.title, depth: item.depth };\n    }\n    return {\n      kind: 'chapter', id: item.id, title: item.title,\n      locator: { chapterID: item.id },\n      access: { state: item.access || 'unknown' }, depth: item.depth\n    };\n  });\n  return { items: items, next: nextToken(data.nextCursor, ctx) };\n}\n\n/** @param {Nori.ContentInput} input @param {Nori.Context} ctx */\nexport async function content(input, ctx) {\n  const response = await ctx.http.request({\n    endpoint: 'api', method: 'GET', path: '/chapters/{id}/content',\n    parameters: { id: locatorID(input.chapter.locator, 'chapterID', ctx) }, session: 'member'\n  });\n  const data = payload(response, ctx);\n  /** @type {Nori.Block[]} */\n  const blocks = [];\n  /** @type {Record<string, Nori.Asset>} */\n  const assets = {};\n  for (const part of data.parts) {\n    ctx.signal.throwIfAborted();\n    if (part.kind === 'text') {\n      blocks.push({ kind: 'paragraph', id: part.id, text: part.text });\n    } else if (part.kind === 'image') {\n      assets[part.id] = {\n        id: part.id, role: 'image', mediaType: part.mediaType,\n        source: { url: part.url, endpoint: 'files' },\n        width: part.width, height: part.height\n      };\n      blocks.push({ kind: 'image', id: part.id, asset: part.id });\n    } else {\n      ctx.fail('unsupported_feature', '聚合接口返回未声明的内容类型', '/response/data/parts');\n    }\n  }\n  return {\n    id: input.chapter.id, chapterID: input.chapter.id, kind: input.book.kind,\n    title: data.title, revision: data.revision, blocks: blocks, assets: assets\n  };\n}\n\n/** @param {Nori.ResolveInput} input @param {Nori.Context} ctx */\nexport async function resolveResource(input, ctx) {\n  if (!('locator' in input.asset.source)) {\n    ctx.fail('value_invalid', '当前资源不需要调用源站解析');\n  }\n  const response = await ctx.http.request({\n    endpoint: 'api', method: 'POST', path: '/files/resolve',\n    session: 'member', json: { fileID: locatorID(input.asset.source.locator, 'fileID', ctx) }\n  });\n  const data = payload(response, ctx);\n  // This address may expire. The persistent Asset retains only fileID.\n  return { url: data.url, endpoint: 'files', expiresAt: data.expiresAt };\n}\n"
+  }
+}

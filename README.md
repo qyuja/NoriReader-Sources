@@ -39,6 +39,14 @@ https://raw.githubusercontent.com/qyuja/NoriReader-Sources/main/index.js
 
 ## 编写自己的源
 
+新源推荐使用 **Nori Source v2 / SDK 2.1.0**。阅读[完整制作指南](docs/nori-source-authoring.md)：从离线源开始，接入小说与漫画的搜索、分类、详情、章节、正文、资源、登录，再打包、验证和发布分组合集。
+
+- [SDK、Schema 与打包说明](docs/nori-source-v2/README.md)
+- [可直接导入的 v2 离线包](docs/nori-source-v2/examples/offline.nori.json)（下载 JSON 或复制 Raw 地址）
+- [完整 HTML 小说站作者模板](docs/nori-source-v2/examples/web-novel/source.yaml)
+
+v2 作者使用 YAML + ES 模块，发布为自包含 `.nori.json`。旧 JS 源继续使用下方原有入口和文档。
+
 1. 阅读[快速开始](docs/quickstart.md)，复制示例并修改源 ID、站点域名和解析规则。
 2. 按 [JS 源协议](docs/js-sources.md) 实现搜索、筛选、分页、详情与正文，或声明网盘入口。
 3. 提交到自己的 GitHub 仓库，使用对应 Raw 地址添加到 App，验证完整阅读流程。
@@ -69,4 +77,4 @@ node scripts/check_sources.mjs
 git diff --check
 ```
 
-工具只需要 Python 3.9+ 和 Node.js 22+，无需安装第三方依赖。检查通过后提交模块与生成文件并推送到 `main`；GitHub Actions 会检查生成文件是否同步。App 端需要用户主动刷新，不会随仓库更新自动替换本机源。
+上面的旧 JS 生成与检查工具只需要 Python 3.9+ 和 Node.js 22+，无需安装第三方依赖。Nori v2 打包器另需 Python 3.10+ 和 `scripts/source_protocol/requirements-v2.txt` 中的依赖，安装与使用见完整制作指南。检查通过后提交模块与生成文件并推送到 `main`；GitHub Actions 会检查生成文件是否同步。App 端需要用户主动刷新，不会随仓库更新自动替换本机源。

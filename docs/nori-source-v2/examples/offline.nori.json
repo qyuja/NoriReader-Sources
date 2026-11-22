@@ -1,0 +1,80 @@
+{
+  "description": "用于确认导入、搜索、目录续页、阅读版本和原生阅读器的示例，不访问网络。",
+  "format": "nori-source",
+  "id": "org.norireader.example.offline",
+  "modules": {
+    "offline.js": "// A self-contained source for trying the native v2 flow without a website or account.\n/** @type {Nori.Book} */\nconst book = {\n  id: 'mountain-notes', title: '山海札记', kind: 'novel', authors: ['随阅'],\n  summary: '这是随阅 v2 协议的离线示例。可以搜索、切换阅读版本、查看分卷目录并阅读两章原创示例文字。',\n  metadata: { status: 'completed', chapterCount: 2, tags: ['协议示例'] }\n};\n/** @type {Nori.Chapter} */\nconst first = { kind: 'chapter', id: 'morning', title: '第一章 · 山间清晨' };\n/** @type {Nori.Chapter} */\nconst second = { kind: 'chapter', id: 'evening', title: '第二章 · 海边傍晚' };\n\n/** @param {Nori.Input} input @param {Nori.Context} ctx @returns {Nori.BookPage} */\nexport function catalog(input, ctx) {\n  return { items: [book], next: null };\n}\n/** @param {Nori.SearchInput} input @param {Nori.Context} ctx @returns {Nori.BookPage} */\nexport function search(input, ctx) {\n  const query = input.query.trim();\n  return { items: !query || book.title.includes(query) || (book.authors || []).some(name => name.includes(query)) ? [book] : [], next: null };\n}\n/** @param {Nori.DetailInput} input @param {Nori.Context} ctx @returns {Nori.DetailResult} */\nexport function detail(input, ctx) {\n  return {\n    book,\n    editions: [{ id: 'original', title: '原文版', kind: 'chapters' }, { id: 'annotated', title: '批注版', kind: 'chapters' }],\n    chapterPage: { editionID: 'original', page: { items: [{ kind: 'section', id: 'volume', title: '山与海' }, first], next: { kind: 'token', value: 'evening' } } }\n  };\n}\n/** @param {Nori.ChaptersInput} input @param {Nori.Context} ctx @returns {Nori.ChapterPage} */\nexport function chapters(input, ctx) {\n  if (input.cursor === 'evening') return { items: [second], next: null };\n  return { items: [first], next: { kind: 'token', value: 'evening' } };\n}\n/** @param {Nori.ContentInput} input @param {Nori.Context} ctx @returns {Nori.Document} */\nexport function content(input, ctx) {\n  const stored = ctx.state.get('reads');\n  const reads = typeof stored === 'number' ? stored : 0;\n  ctx.state.set('reads', reads + 1);\n  const paragraphs = input.chapter.id === 'morning' ? [\n    '天刚亮，山路还浸在一层薄雾里。脚步落在石阶上，远处传来几声鸟鸣。',\n    '松枝接住了昨夜的雨，风一吹，水珠就从针叶间落下。',\n    '走到山口时，太阳照亮了远处的屋顶。今天的路，从这里开始。'\n  ] : [\n    '傍晚的海面慢慢变暗，最后一束光沿着波纹铺向岸边。',\n    '有人收起小船，有人坐在石头上等潮。风带着盐的气息。',\n    '山路与海岸相隔很远，却都让人愿意把脚步放慢。'\n  ];\n  /** @type {Nori.Block[]} */\n  const blocks = [{ kind: 'heading', level: 2, text: input.chapter.title }];\n  for (const text of paragraphs) blocks.push({ kind: 'paragraph', text });\n  if (input.settings.quote) blocks.push({ kind: 'quote', text: '把脚步放慢，也是一种抵达。' });\n  if (input.edition.id === 'annotated') blocks.push({ kind: 'listItem', text: '批注：此版本与原文版的阅读位置分别保存。' });\n  return { id: input.edition.id + ':' + input.chapter.id, chapterID: input.chapter.id, kind: 'novel', blocks };\n}\n/** @param {Nori.ActionInput} input @param {Nori.Context} ctx @returns {Nori.ActionResult} */\nexport function action(input, ctx) {\n  if (input.actionID !== 'reset') ctx.fail('value_invalid', '', '/actionID');\n  ctx.state.remove('reads');\n  return { changed: true };\n}\n"
+  },
+  "name": "v2 离线示例",
+  "requires": [
+    "core-v2"
+  ],
+  "schemaVersion": 2,
+  "sites": [
+    {
+      "actions": [
+        {
+          "effect": "read",
+          "id": "reset",
+          "title": "重置示例阅读计数"
+        }
+      ],
+      "id": "notes",
+      "kinds": [
+        "novel"
+      ],
+      "name": "山海札记",
+      "operations": {
+        "action": {
+          "script": {
+            "export": "action",
+            "module": "offline.js"
+          }
+        },
+        "catalog": {
+          "script": {
+            "export": "catalog",
+            "module": "offline.js"
+          }
+        },
+        "chapters": {
+          "script": {
+            "export": "chapters",
+            "module": "offline.js"
+          }
+        },
+        "content": {
+          "script": {
+            "export": "content",
+            "module": "offline.js"
+          }
+        },
+        "detail": {
+          "script": {
+            "export": "detail",
+            "module": "offline.js"
+          }
+        },
+        "search": {
+          "script": {
+            "export": "search",
+            "module": "offline.js"
+          }
+        }
+      },
+      "requires": [
+        "script-v2",
+        "state-v1"
+      ],
+      "settings": [
+        {
+          "control": "toggle",
+          "defaultValue": true,
+          "id": "quote",
+          "title": "显示章末摘句"
+        }
+      ]
+    }
+  ],
+  "version": "1.0.0"
+}

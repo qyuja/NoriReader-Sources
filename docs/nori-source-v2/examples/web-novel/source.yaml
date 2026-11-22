@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../authoring.schema.json
+# Fictional HTML contract. Replace endpoints, paths and selectors for a real site.
+format: nori-source
+schemaVersion: 2
+id: org.example.nori.webnovel
+name: HTML 小说站制作示例
+version: 1.0.0
+description: 虚构网站的完整在线操作模板，未声明真实站点可用。
+requires: [core-v2]
+modules:
+  reader.js: {file: reader.js}
+sites:
+  - id: books
+    name: 示例小说站
+    kinds: [novel]
+    requires: [script-v2, http-v1, html-v1, css-v1, url-v1, content-v1]
+    network:
+      endpoints:
+        web:
+          baseURL: https://books.example.com/
+          allowedHosts: [books.example.com]
+        images:
+          baseURL: https://images.example.com/
+          allowedHosts: [images.example.com]
+          headers:
+            Referer: https://books.example.com/
+    operations:
+      filters: {script: {module: reader.js, export: filters}}
+      search: {script: {module: reader.js, export: search}}
+      catalog: {script: {module: reader.js, export: catalog}}
+      detail: {script: {module: reader.js, export: detail}}
+      chapters: {script: {module: reader.js, export: chapters}}
+      content: {script: {module: reader.js, export: content}}

@@ -1,0 +1,2413 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:norireader:source:2",
+  "title": "Nori Source v2 (draft)",
+  "description": "Independent source package contract. Structural validation does not imply host support or website behavior.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schemaVersion",
+    "id",
+    "name",
+    "version",
+    "requires",
+    "sites"
+  ],
+  "properties": {
+    "format": {
+      "const": "nori-source"
+    },
+    "schemaVersion": {
+      "const": 2
+    },
+    "id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "author": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "requires": {
+      "$ref": "#/$defs/Requirements"
+    },
+    "sites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Site"
+      },
+      "minItems": 1
+    },
+    "modules": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9_./-]+\\.js$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z0-9-]+)+$"
+      }
+    }
+  },
+  "$defs": {
+    "Identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "NonemptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "WEB_URL": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://"
+    },
+    "Pointer": {
+      "type": "string",
+      "pattern": "^(?:/(?:[^~/]|~0|~1)*)*$"
+    },
+    "Host": {
+      "type": "string",
+      "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$"
+    },
+    "Requirements": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9.-]*-v[1-9][0-9]*$"
+      },
+      "uniqueItems": true
+    },
+    "Scalar": {
+      "type": [
+        "string",
+        "number",
+        "boolean",
+        "null"
+      ]
+    },
+    "Kind": {
+      "enum": [
+        "novel",
+        "comic"
+      ]
+    },
+    "Entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "module",
+        "export"
+      ],
+      "properties": {
+        "module": {
+          "type": "string",
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9_./-]+\\.js$"
+        },
+        "export": {
+          "type": "string",
+          "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+        }
+      }
+    },
+    "InputReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "$ref": "#/$defs/Pointer"
+        },
+        "default": {}
+      }
+    },
+    "SettingReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "setting"
+      ],
+      "properties": {
+        "setting": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "default": {}
+      }
+    },
+    "ParameterReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parameter"
+      ],
+      "properties": {
+        "parameter": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "default": {}
+      }
+    },
+    "CredentialReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "credential"
+      ],
+      "properties": {
+        "credential": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "default": {}
+      }
+    },
+    "Literal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "literal"
+      ],
+      "properties": {
+        "literal": {}
+      }
+    },
+    "Binding": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Scalar"
+        },
+        {
+          "$ref": "#/$defs/Literal"
+        },
+        {
+          "$ref": "#/$defs/InputReference"
+        },
+        {
+          "$ref": "#/$defs/SettingReference"
+        },
+        {
+          "$ref": "#/$defs/ParameterReference"
+        },
+        {
+          "$ref": "#/$defs/CredentialReference"
+        }
+      ]
+    },
+    "BindingMap": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/Binding"
+      }
+    },
+    "Step": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op"
+          ],
+          "properties": {
+            "op": {
+              "enum": [
+                "trim",
+                "emptyToNull",
+                "toInteger",
+                "resolveURL"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "separator"
+          ],
+          "properties": {
+            "op": {
+              "const": "split"
+            },
+            "separator": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "from",
+            "to"
+          ],
+          "properties": {
+            "op": {
+              "const": "replace"
+            },
+            "from": {
+              "type": "string",
+              "minLength": 1
+            },
+            "to": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "CSS": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "css"
+      ],
+      "properties": {
+        "css": {
+          "type": "string"
+        },
+        "read": {
+          "enum": [
+            "text",
+            "ownText",
+            "html",
+            "node"
+          ]
+        },
+        "attr": {
+          "type": "string",
+          "minLength": 1
+        },
+        "all": {
+          "type": "boolean"
+        },
+        "scope": {
+          "enum": [
+            "item",
+            "document"
+          ]
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Step"
+          }
+        }
+      },
+      "not": {
+        "required": [
+          "read",
+          "attr"
+        ]
+      }
+    },
+    "XPath": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "xpath"
+      ],
+      "properties": {
+        "xpath": {
+          "type": "string"
+        },
+        "read": {
+          "enum": [
+            "text",
+            "ownText",
+            "html",
+            "node"
+          ]
+        },
+        "attr": {
+          "type": "string",
+          "minLength": 1
+        },
+        "all": {
+          "type": "boolean"
+        },
+        "scope": {
+          "enum": [
+            "item",
+            "document"
+          ]
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Step"
+          }
+        }
+      },
+      "not": {
+        "required": [
+          "read",
+          "attr"
+        ]
+      }
+    },
+    "JSONPath": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "jsonpath"
+      ],
+      "properties": {
+        "jsonpath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "all": {
+          "type": "boolean"
+        },
+        "scope": {
+          "enum": [
+            "item",
+            "document"
+          ]
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Step"
+          }
+        }
+      }
+    },
+    "Regex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "regex"
+      ],
+      "properties": {
+        "regex": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pattern"
+          ],
+          "properties": {
+            "pattern": {
+              "type": "string"
+            },
+            "flags": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "i",
+                  "m",
+                  "s",
+                  "u"
+                ]
+              },
+              "uniqueItems": true
+            },
+            "group": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "all": {
+          "type": "boolean"
+        },
+        "scope": {
+          "enum": [
+            "item",
+            "document"
+          ]
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Step"
+          }
+        }
+      }
+    },
+    "FieldMap": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/Expression"
+      }
+    },
+    "ObjectExpression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fields"
+      ],
+      "properties": {
+        "fields": {
+          "$ref": "#/$defs/FieldMap"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Step"
+          }
+        }
+      }
+    },
+    "EachExpression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "each"
+      ],
+      "properties": {
+        "each": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "select",
+            "fields"
+          ],
+          "properties": {
+            "select": {
+              "$ref": "#/$defs/Expression"
+            },
+            "fields": {
+              "$ref": "#/$defs/FieldMap"
+            }
+          }
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Step"
+          }
+        }
+      }
+    },
+    "BlocksExpression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "blocks"
+      ],
+      "properties": {
+        "blocks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "select",
+            "format"
+          ],
+          "properties": {
+            "select": {
+              "$ref": "#/$defs/Expression"
+            },
+            "format": {
+              "enum": [
+                "html",
+                "text"
+              ]
+            },
+            "remove": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            }
+          }
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Step"
+          }
+        }
+      }
+    },
+    "ScriptExpression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "script"
+      ],
+      "properties": {
+        "script": {
+          "$ref": "#/$defs/Entry"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Step"
+          }
+        }
+      }
+    },
+    "Expression": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Binding"
+        },
+        {
+          "$ref": "#/$defs/CSS"
+        },
+        {
+          "$ref": "#/$defs/XPath"
+        },
+        {
+          "$ref": "#/$defs/JSONPath"
+        },
+        {
+          "$ref": "#/$defs/Regex"
+        },
+        {
+          "$ref": "#/$defs/ObjectExpression"
+        },
+        {
+          "$ref": "#/$defs/EachExpression"
+        },
+        {
+          "$ref": "#/$defs/BlocksExpression"
+        },
+        {
+          "$ref": "#/$defs/ScriptExpression"
+        }
+      ]
+    },
+    "Request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "endpoint",
+        "method"
+      ],
+      "properties": {
+        "endpoint": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "method": {
+          "enum": [
+            "GET",
+            "POST",
+            "HEAD"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "$ref": "#/$defs/Binding"
+        },
+        "parameters": {
+          "$ref": "#/$defs/BindingMap"
+        },
+        "query": {
+          "$ref": "#/$defs/BindingMap"
+        },
+        "headers": {
+          "$ref": "#/$defs/BindingMap"
+        },
+        "form": {
+          "$ref": "#/$defs/BindingMap"
+        },
+        "json": {
+          "$ref": "#/$defs/BindingMap"
+        },
+        "session": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "charset": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "path"
+          ],
+          "not": {
+            "required": [
+              "url"
+            ]
+          }
+        },
+        {
+          "required": [
+            "url"
+          ],
+          "not": {
+            "required": [
+              "path"
+            ]
+          }
+        }
+      ],
+      "allOf": [
+        {
+          "not": {
+            "required": [
+              "form",
+              "json"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "method": {
+                "enum": [
+                  "GET",
+                  "HEAD"
+                ]
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "form"
+                  ]
+                },
+                {
+                  "required": [
+                    "json"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "Response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format"
+      ],
+      "properties": {
+        "format": {
+          "enum": [
+            "html",
+            "json",
+            "text"
+          ]
+        },
+        "charset": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "ErrorCode": {
+      "enum": [
+        "invalid_definition",
+        "missing_required",
+        "value_invalid",
+        "unsupported_feature",
+        "network",
+        "auth_required",
+        "verification_required",
+        "access_denied",
+        "rate_limited",
+        "timeout",
+        "cancelled",
+        "source_error"
+      ]
+    },
+    "Check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "equals",
+        "error"
+      ],
+      "properties": {
+        "value": {
+          "$ref": "#/$defs/Expression"
+        },
+        "equals": {
+          "$ref": "#/$defs/Scalar"
+        },
+        "error": {
+          "$ref": "#/$defs/ErrorCode"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "Pagination": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "const": "none"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "next"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "nextURL",
+                "token"
+              ]
+            },
+            "next": {
+              "$ref": "#/$defs/Expression"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "hasMore"
+          ],
+          "properties": {
+            "mode": {
+              "const": "page"
+            },
+            "hasMore": {
+              "$ref": "#/$defs/Expression"
+            }
+          }
+        }
+      ]
+    },
+    "Plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request",
+        "response",
+        "result"
+      ],
+      "properties": {
+        "request": {
+          "$ref": "#/$defs/Request"
+        },
+        "response": {
+          "$ref": "#/$defs/Response"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Check"
+          }
+        },
+        "result": {
+          "$ref": "#/$defs/ObjectExpression"
+        },
+        "pagination": {
+          "$ref": "#/$defs/Pagination"
+        }
+      }
+    },
+    "Operation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "plan"
+          ],
+          "properties": {
+            "plan": {
+              "$ref": "#/$defs/Plan"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "script"
+          ],
+          "properties": {
+            "script": {
+              "$ref": "#/$defs/Entry"
+            }
+          }
+        }
+      ]
+    },
+    "Policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxConcurrency": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "minIntervalMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "maxRequests": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "maxResponseBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "scriptTimeMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "maxMemoryBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "Endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseURL",
+        "allowedHosts"
+      ],
+      "properties": {
+        "baseURL": {
+          "$ref": "#/$defs/WEB_URL"
+        },
+        "allowedHosts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Host"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Network": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "endpoints"
+      ],
+      "properties": {
+        "endpoints": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/Endpoint"
+          }
+        },
+        "policy": {
+          "$ref": "#/$defs/Policy"
+        }
+      }
+    },
+    "ControlOption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "title"
+      ],
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "Control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "control",
+        "defaultValue"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "control": {
+          "enum": [
+            "text",
+            "toggle",
+            "select",
+            "multiSelect"
+          ]
+        },
+        "defaultValue": {
+          "type": [
+            "string",
+            "boolean",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ControlOption"
+          },
+          "minItems": 1
+        },
+        "when": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Scalar"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "control": {
+                "const": "toggle"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "defaultValue": {
+                "type": "boolean"
+              }
+            },
+            "not": {
+              "required": [
+                "options"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "control": {
+                "const": "text"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "defaultValue": {
+                "type": "string"
+              }
+            },
+            "not": {
+              "required": [
+                "options"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "control": {
+                "const": "select"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "options"
+            ],
+            "properties": {
+              "defaultValue": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "control": {
+                "const": "multiSelect"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "options"
+            ],
+            "properties": {
+              "defaultValue": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "uniqueItems": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AuthenticationField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "enum": [
+            "text",
+            "password"
+          ]
+        }
+      }
+    },
+    "CredentialTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "header"
+      ],
+      "properties": {
+        "header": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "encoding": {
+          "enum": [
+            "plain",
+            "base64"
+          ]
+        }
+      }
+    },
+    "Session": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "endpoint",
+            "loginURL",
+            "check"
+          ],
+          "properties": {
+            "kind": {
+              "const": "web"
+            },
+            "endpoint": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "loginURL": {
+              "$ref": "#/$defs/WEB_URL"
+            },
+            "check": {
+              "$ref": "#/$defs/Operation"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "endpoint",
+            "fields",
+            "request",
+            "response",
+            "token",
+            "credential"
+          ],
+          "properties": {
+            "kind": {
+              "const": "form"
+            },
+            "endpoint": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/AuthenticationField"
+              },
+              "minItems": 1
+            },
+            "request": {
+              "$ref": "#/$defs/Request"
+            },
+            "response": {
+              "$ref": "#/$defs/Response"
+            },
+            "checks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Check"
+              }
+            },
+            "token": {
+              "$ref": "#/$defs/Expression"
+            },
+            "credential": {
+              "$ref": "#/$defs/CredentialTarget"
+            },
+            "check": {
+              "$ref": "#/$defs/Operation"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "endpoint",
+            "fields",
+            "login",
+            "check"
+          ],
+          "properties": {
+            "kind": {
+              "const": "script"
+            },
+            "endpoint": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/AuthenticationField"
+              }
+            },
+            "login": {
+              "$ref": "#/$defs/Entry"
+            },
+            "check": {
+              "$ref": "#/$defs/Operation"
+            },
+            "credential": {
+              "$ref": "#/$defs/CredentialTarget"
+            }
+          }
+        }
+      ]
+    },
+    "Action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "effect"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "effect": {
+          "enum": [
+            "read",
+            "write"
+          ]
+        }
+      }
+    },
+    "Presentation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "group": {
+          "type": "string"
+        },
+        "icon": {
+          "$ref": "#/$defs/WEB_URL"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "kinds",
+        "requires",
+        "operations"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kinds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Kind"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "requires": {
+          "$ref": "#/$defs/Requirements"
+        },
+        "homepage": {
+          "$ref": "#/$defs/WEB_URL"
+        },
+        "network": {
+          "$ref": "#/$defs/Network"
+        },
+        "sessions": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/Session"
+          }
+        },
+        "settings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Control"
+          }
+        },
+        "filters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "catalog": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Control"
+              }
+            },
+            "search": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Control"
+              }
+            }
+          }
+        },
+        "presentation": {
+          "$ref": "#/$defs/Presentation"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Action"
+          }
+        },
+        "operations": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "catalog": {
+              "$ref": "#/$defs/Operation"
+            },
+            "search": {
+              "$ref": "#/$defs/Operation"
+            },
+            "filters": {
+              "$ref": "#/$defs/Operation"
+            },
+            "detail": {
+              "$ref": "#/$defs/Operation"
+            },
+            "chapters": {
+              "$ref": "#/$defs/Operation"
+            },
+            "content": {
+              "$ref": "#/$defs/Operation"
+            },
+            "resolveResource": {
+              "$ref": "#/$defs/Operation"
+            },
+            "action": {
+              "$ref": "#/$defs/Operation"
+            }
+          },
+          "minProperties": 1
+        }
+      },
+      "anyOf": [
+        {
+          "properties": {
+            "operations": {
+              "required": [
+                "catalog"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "operations": {
+              "required": [
+                "search"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "operations": {
+              "required": [
+                "detail"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "AssetSource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "url",
+            "endpoint"
+          ],
+          "properties": {
+            "url": {
+              "$ref": "#/$defs/WEB_URL"
+            },
+            "endpoint": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "session": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "credentialBindings": {
+              "$ref": "#/$defs/ResourceCredentialBindings"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "locator"
+          ],
+          "properties": {
+            "locator": {
+              "type": "object"
+            }
+          }
+        }
+      ]
+    },
+    "Asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "mediaType",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mediaType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "$ref": "#/$defs/AssetSource"
+        },
+        "role": {
+          "enum": [
+            "cover",
+            "image",
+            "font",
+            "publication"
+          ]
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "alt": {
+          "type": "string"
+        }
+      }
+    },
+    "BookMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "ongoing",
+            "completed",
+            "unknown"
+          ]
+        },
+        "wordCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "chapterCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "updatedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "value"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "Book": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "kind"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "$ref": "#/$defs/Kind"
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "summary": {
+          "type": "string"
+        },
+        "cover": {
+          "$ref": "#/$defs/Asset"
+        },
+        "metadata": {
+          "$ref": "#/$defs/BookMetadata"
+        },
+        "locator": {
+          "type": "object"
+        }
+      }
+    },
+    "Edition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "title",
+            "kind"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "chapters"
+            },
+            "locator": {
+              "type": "object"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "title",
+            "kind",
+            "resource"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "file"
+            },
+            "resource": {
+              "$ref": "#/$defs/Asset"
+            }
+          }
+        }
+      ]
+    },
+    "Access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "available",
+            "loginRequired",
+            "locked",
+            "unknown"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "Chapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "id",
+        "title"
+      ],
+      "properties": {
+        "kind": {
+          "const": "chapter"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "locator": {
+          "type": "object"
+        },
+        "access": {
+          "$ref": "#/$defs/Access"
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "updatedAt": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "Section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "id",
+        "title"
+      ],
+      "properties": {
+        "kind": {
+          "const": "section"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "TOCItem": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Chapter"
+        },
+        {
+          "$ref": "#/$defs/Section"
+        }
+      ]
+    },
+    "Continuation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "url"
+          ],
+          "properties": {
+            "kind": {
+              "const": "url"
+            },
+            "url": {
+              "$ref": "#/$defs/WEB_URL"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "value"
+          ],
+          "properties": {
+            "kind": {
+              "const": "token"
+            },
+            "value": {
+              "not": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "const": "page"
+            }
+          }
+        }
+      ]
+    },
+    "Next": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Continuation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "BookPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "next"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Book"
+          }
+        },
+        "next": {
+          "$ref": "#/$defs/Next"
+        }
+      }
+    },
+    "ChapterPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "next"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TOCItem"
+          }
+        },
+        "next": {
+          "$ref": "#/$defs/Next"
+        }
+      }
+    },
+    "DetailResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "book",
+        "editions"
+      ],
+      "properties": {
+        "book": {
+          "$ref": "#/$defs/Book"
+        },
+        "editions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Edition"
+          },
+          "minItems": 1
+        },
+        "chapterPage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "editionID",
+            "page"
+          ],
+          "properties": {
+            "editionID": {
+              "type": "string",
+              "minLength": 1
+            },
+            "page": {
+              "$ref": "#/$defs/ChapterPage"
+            }
+          }
+        }
+      }
+    },
+    "TextMark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "start",
+        "length"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "emphasis",
+            "strong",
+            "code"
+          ]
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "TextBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "text"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "paragraph",
+            "heading",
+            "quote",
+            "listItem"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "text": {
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "marks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TextMark"
+          }
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "commentCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "comments": {
+          "$ref": "#/$defs/Asset"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "heading"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "level"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "level"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "ImageBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "asset"
+      ],
+      "properties": {
+        "kind": {
+          "const": "image"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "asset": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commentCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "comments": {
+          "$ref": "#/$defs/Asset"
+        }
+      }
+    },
+    "Block": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TextBlock"
+        },
+        {
+          "$ref": "#/$defs/ImageBlock"
+        }
+      ]
+    },
+    "Document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "chapterID",
+        "kind",
+        "blocks"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "chapterID": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "$ref": "#/$defs/Kind"
+        },
+        "title": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Block"
+          },
+          "minItems": 1
+        },
+        "assets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Asset"
+          }
+        }
+      }
+    },
+    "ResolvedResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url",
+        "endpoint"
+      ],
+      "properties": {
+        "url": {
+          "$ref": "#/$defs/WEB_URL"
+        },
+        "endpoint": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "session": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "credentialBindings": {
+          "$ref": "#/$defs/ResourceCredentialBindings"
+        }
+      }
+    },
+    "FiltersResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fields"
+      ],
+      "properties": {
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Control"
+          }
+        }
+      }
+    },
+    "ActionResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "changed"
+      ],
+      "properties": {
+        "changed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "SessionStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authenticated"
+      ],
+      "properties": {
+        "authenticated": {
+          "type": "boolean"
+        },
+        "displayName": {
+          "type": "string"
+        }
+      }
+    },
+    "SessionCheckResult": {
+      "$ref": "#/$defs/SessionStatus"
+    },
+    "Diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "path",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/ErrorCode"
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "$ref": "#/$defs/Pointer"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "httpStatus": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 599
+        },
+        "retryAfterMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "ReadingAnchor": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "packageID",
+            "siteID",
+            "bookID",
+            "editionID",
+            "chapterID",
+            "kind",
+            "blockIndex",
+            "utf16Offset"
+          ],
+          "properties": {
+            "packageID": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "siteID": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "bookID": {
+              "type": "string",
+              "minLength": 1
+            },
+            "editionID": {
+              "type": "string",
+              "minLength": 1
+            },
+            "chapterID": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "text"
+            },
+            "blockID": {
+              "type": "string",
+              "minLength": 1
+            },
+            "blockIndex": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "utf16Offset": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "quote": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "before": {
+                  "type": "string"
+                },
+                "highlight": {
+                  "type": "string"
+                },
+                "after": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "packageID",
+            "siteID",
+            "bookID",
+            "editionID",
+            "chapterID",
+            "kind",
+            "blockIndex",
+            "fraction"
+          ],
+          "properties": {
+            "packageID": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "siteID": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "bookID": {
+              "type": "string",
+              "minLength": 1
+            },
+            "editionID": {
+              "type": "string",
+              "minLength": 1
+            },
+            "chapterID": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "image"
+            },
+            "blockID": {
+              "type": "string",
+              "minLength": 1
+            },
+            "blockIndex": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "fraction": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      ]
+    },
+    "Provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "sha256",
+        "tool",
+        "toolVersion"
+      ],
+      "properties": {
+        "format": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "tool": {
+          "type": "string",
+          "minLength": 1
+        },
+        "toolVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "identities": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sourceKey",
+              "legacySiteID",
+              "sourceIndex"
+            ],
+            "properties": {
+              "sourceKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "legacySiteID": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sourceIndex": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            }
+          }
+        }
+      }
+    },
+    "ResourceCredentialBindings": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "session",
+          "target",
+          "key"
+        ],
+        "properties": {
+          "session": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "target": {
+            "const": "query"
+          },
+          "key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "encoding": {
+            "enum": [
+              "plain",
+              "base64"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

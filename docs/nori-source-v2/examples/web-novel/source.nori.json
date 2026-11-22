@@ -1,0 +1,88 @@
+{
+  "description": "虚构网站的完整在线操作模板，未声明真实站点可用。",
+  "format": "nori-source",
+  "id": "org.example.nori.webnovel",
+  "modules": {
+    "reader.js": "// Fictional HTML contract; see ../../../nori-source-authoring.md.\n// List: .book[data-book-id], .title, .author, a.details; a.next is the next page.\n// Detail: h1, .author, .intro, img.cover, a.catalog.\n// TOC: #chapters a[data-chapter-id], a.toc-next.\n// Body: #content; this template assumes a chapter has exactly one HTML page.\n\nconst categories = [{ value: 'all', title: '全部' }, { value: 'fantasy', title: '奇幻' }];\n\nfunction required(value, nori, path) {\n  if (typeof value !== 'string' || !value.trim()) nori.fail('value_invalid', '网页缺少必要字段', path);\n  return value.trim();\n}\n\nfunction nodeText(root, selector, nori) {\n  const node = nori.dom.select(root, selector);\n  return node ? nori.dom.text(node).trim() : '';\n}\n\nfunction linkURL(root, selector, baseURL, nori) {\n  const node = nori.dom.select(root, selector);\n  const href = node ? nori.dom.attr(node, 'href') : null;\n  return href && href.trim() ? nori.url.resolve(href.trim(), baseURL) : null;\n}\n\nfunction coverAsset(root, baseURL, id, nori) {\n  const node = nori.dom.select(root, 'img.cover');\n  const src = node ? (nori.dom.attr(node, 'data-src') || nori.dom.attr(node, 'src')) : null;\n  // This example's image endpoint serves JPEG covers.\n  return src ? { id: 'cover:' + id, role: 'cover', mediaType: 'image/jpeg',\n    source: { url: nori.url.resolve(src, baseURL), endpoint: 'images' } } : undefined;\n}\n\nfunction bookModel(node, baseURL, nori) {\n  const id = required(nori.dom.attr(node, 'data-book-id'), nori, '/book/id');\n  const url = required(linkURL(node, 'a.details', baseURL, nori), nori, '/book/locator/url');\n  const book = { id, kind: 'novel', title: required(nodeText(node, '.title', nori), nori, '/book/title'), locator: { url } };\n  const author = nodeText(node, '.author', nori);\n  const cover = coverAsset(node, baseURL, id, nori);\n  if (author) book.authors = [author];\n  if (cover) book.cover = cover;\n  return book;\n}\n\nasync function listPage(input, nori, searching) {\n  const request = typeof input.cursor === 'string'\n    ? { endpoint: 'web', method: 'GET', url: input.cursor }\n    : { endpoint: 'web', method: 'GET', path: searching ? '/search' : '/catalog',\n        query: searching ? { q: input.query } : { category: input.filters.category || 'all' } };\n  const response = await nori.http.request(request);\n  const document = nori.dom.parse(response);\n  try {\n    const items = nori.dom.selectAll(document, '.book').map(node => bookModel(node, response.url, nori));\n    const nextURL = linkURL(document, 'a.next', response.url, nori);\n    return { items, next: nextURL ? { kind: 'url', url: nextURL } : null };\n  } finally {\n    nori.dom.free(document);\n  }\n}\n\nexport function filters(input, nori) {\n  return { fields: input.scope === 'search' ? [] : [{ id: 'category', title: '分类', control: 'select', defaultValue: 'all', options: categories }] };\n}\n\nexport async function search(input, nori) {\n  return listPage(input, nori, true);\n}\n\nexport async function catalog(input, nori) {\n  return listPage(input, nori, false);\n}\n\nexport async function detail(input, nori) {\n  const address = required(input.book.locator && input.book.locator.url, nori, '/book/locator/url');\n  const response = await nori.http.request({ endpoint: 'web', method: 'GET', url: address });\n  const document = nori.dom.parse(response);\n  try {\n    const book = { ...input.book, title: required(nodeText(document, 'h1', nori), nori, '/book/title') };\n    const author = nodeText(document, '.author', nori);\n    const summary = nodeText(document, '.intro', nori);\n    const cover = coverAsset(document, response.url, book.id, nori);\n    if (author) book.authors = [author];\n    if (summary) book.summary = summary;\n    if (cover) book.cover = cover;\n    const catalogURL = required(linkURL(document, 'a.catalog', response.url, nori), nori, '/edition/locator/catalogURL');\n    return { book, editions: [{ id: 'online', title: '在线阅读', kind: 'chapters', locator: { catalogURL } }] };\n  } finally {\n    nori.dom.free(document);\n  }\n}\n\nexport async function chapters(input, nori) {\n  const url = typeof input.cursor === 'string' ? input.cursor : input.edition.locator && input.edition.locator.catalogURL;\n  const response = await nori.http.request({ endpoint: 'web', method: 'GET', url: required(url, nori, '/edition/locator/catalogURL') });\n  const document = nori.dom.parse(response);\n  try {\n    const items = nori.dom.selectAll(document, '#chapters a').map(node => ({\n      kind: 'chapter',\n      id: required(nori.dom.attr(node, 'data-chapter-id'), nori, '/chapter/id'),\n      title: required(nori.dom.text(node), nori, '/chapter/title'),\n      locator: { url: nori.url.resolve(required(nori.dom.attr(node, 'href'), nori, '/chapter/locator/url'), response.url) },\n      access: { state: 'unknown' }\n    }));\n    const nextURL = linkURL(document, 'a.toc-next', response.url, nori);\n    return { items, next: nextURL ? { kind: 'url', url: nextURL } : null };\n  } finally {\n    nori.dom.free(document);\n  }\n}\n\nexport async function content(input, nori) {\n  const url = required(input.chapter.locator && input.chapter.locator.url, nori, '/chapter/locator/url');\n  const response = await nori.http.request({ endpoint: 'web', method: 'GET', url });\n  const document = nori.dom.parse(response);\n  try {\n    const body = nori.dom.select(document, '#content');\n    if (!body) nori.fail('value_invalid', '网页没有小说正文', '/content');\n    const extracted = nori.content.blocks(body, { format: 'html', baseURL: response.url, remove: ['.advertisement'] });\n    if (!extracted.blocks.length) nori.fail('value_invalid', '小说正文为空', '/content');\n    return { id: input.chapter.id, chapterID: input.chapter.id, kind: 'novel', title: input.chapter.title, ...extracted };\n  } finally {\n    nori.dom.free(document);\n  }\n}\n"
+  },
+  "name": "HTML 小说站制作示例",
+  "requires": [
+    "core-v2"
+  ],
+  "schemaVersion": 2,
+  "sites": [
+    {
+      "id": "books",
+      "kinds": [
+        "novel"
+      ],
+      "name": "示例小说站",
+      "network": {
+        "endpoints": {
+          "images": {
+            "allowedHosts": [
+              "images.example.com"
+            ],
+            "baseURL": "https://images.example.com/",
+            "headers": {
+              "Referer": "https://books.example.com/"
+            }
+          },
+          "web": {
+            "allowedHosts": [
+              "books.example.com"
+            ],
+            "baseURL": "https://books.example.com/"
+          }
+        }
+      },
+      "operations": {
+        "catalog": {
+          "script": {
+            "export": "catalog",
+            "module": "reader.js"
+          }
+        },
+        "chapters": {
+          "script": {
+            "export": "chapters",
+            "module": "reader.js"
+          }
+        },
+        "content": {
+          "script": {
+            "export": "content",
+            "module": "reader.js"
+          }
+        },
+        "detail": {
+          "script": {
+            "export": "detail",
+            "module": "reader.js"
+          }
+        },
+        "filters": {
+          "script": {
+            "export": "filters",
+            "module": "reader.js"
+          }
+        },
+        "search": {
+          "script": {
+            "export": "search",
+            "module": "reader.js"
+          }
+        }
+      },
+      "requires": [
+        "script-v2",
+        "http-v1",
+        "html-v1",
+        "css-v1",
+        "url-v1",
+        "content-v1"
+      ]
+    }
+  ],
+  "version": "1.0.0"
+}
