@@ -1,17 +1,17 @@
-# Nori v2 打包与检查
+# Nori JSON 源打包与检查
 
 在本仓库根目录执行。需要 Python 3.10+，使用已安装的 uv 隔离依赖：
 
 ```sh
-uv run --with-requirements scripts/source_protocol/requirements-v2.txt \
+uv run --with-requirements scripts/source_protocol/requirements.txt \
   scripts/pack_source.py init work/my-source --id org.example.reader --name 我的书源
-uv run --with-requirements scripts/source_protocol/requirements-v2.txt \
+uv run --with-requirements scripts/source_protocol/requirements.txt \
   scripts/pack_source.py pack work/my-source -o dist/my-source.nori.json
-uv run --with-requirements scripts/source_protocol/requirements-v2.txt \
+uv run --with-requirements scripts/source_protocol/requirements.txt \
   scripts/pack_source.py validate dist/my-source.nori.json
 ```
 
-不用 uv 时，创建 Python 虚拟环境，安装 requirements-v2.txt 后使用该环境的 Python 执行同一脚本。
+不用 uv 时，创建 Python 虚拟环境，安装 requirements.txt 后使用该环境的 Python 执行同一脚本。
 
 `init` 创建尚不存在的目录，生成完整离线源、编辑器类型与 Schema；`pack` 读取 YAML/JSON 和本地 ES 模块，生成自包含 JSON；`validate` 只读取发布包；`capabilities` 输出随本仓库同步的宿主清单。
 
@@ -20,7 +20,7 @@ uv run --with-requirements scripts/source_protocol/requirements-v2.txt \
 | 检查项 | 意义 |
 | --- | --- |
 | authoring | UTF-8、JSON/YAML 类型、重复字段、本地模块嵌入、16 MiB 包限制 |
-| schema | v2 结构、必填项、类型与互斥字段 |
+| schema | Nori JSON 结构、必填项、类型与互斥字段 |
 | references | 模块、端点、会话、能力、分页及可静态确定的结果关系 |
 | javascript | Tree-sitter 语法、包内依赖、显式导入与导出 |
 | selectors / behavior | 固定 not-run，不运行源、不联网 |

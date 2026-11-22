@@ -1,4 +1,4 @@
-/** Nori Source v2 host SDK 2.1.0. All interfaces here have a native implementation; see sdk.md. */
+/** Nori JSON source host SDK. All interfaces here have a native implementation; see sdk.md. */
 declare namespace Nori {
   type Scalar = string | number | boolean | null;
   type JsonValue = Scalar | JsonObject | readonly JsonValue[];

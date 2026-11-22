@@ -1,6 +1,6 @@
-# Nori Source v2 执行契约
+# Nori JSON 源执行契约
 
-状态：配套 [协议](../nori-source-authoring.md)、[Schema](schema.json) 与 [sdk.d.ts](sdk.d.ts)的执行契约。当前 App 的能力清单、预算及验证范围见 [runtime.md](../nori-source-authoring.md#17-逐步验证完整阅读流程)；外部源通过独立工具转换为本契约，不增加旧程序执行器。
+配套 [制作指南](../nori-source-authoring.md)、[Schema](schema.json) 与 [sdk.d.ts](sdk.d.ts) 的执行契约。宿主能力清单与预算见 [host.json](host.json)，验证流程见[完整阅读检查](../nori-source-authoring.md#17-逐步验证完整阅读流程)。
 
 ## 能力
 
@@ -24,7 +24,7 @@
 | zip-v1 / url-v1 / content-v1 | 内存 ZIP、URL 处理、正文块构造 |
 | task-v1 / diagnostics-v1 | 可取消等待与结构化数值指标 |
 
-CSS 支持元素名、class、id、属性存在及 `=`、`!=`、`^=`、`$=`、`*=`、`~=` 匹配，后代、子代、相邻 / 通用兄弟、逗号组合，以及结构伪类和 `:not`、`:has`、`:contains`、`:containsOwn`、`:containsData`、`:matches`、`:matchesOwn`、`:eq`、`:lt`、`:gt`。这些选择器由 SwiftSoup 执行；未知伪类和伪元素仍须报 unsupported_feature，不回退成空结果。Legado 转换器额外使用 `:nori-index` / `:nori-exclude` 阶段标记，执行前会在宿主中拆解，不属于源作者可直接声明的 CSS。xpath-v1 固定 XPath 1.0，jsonpath-v1 固定 RFC 9535，regex-v1 固定 ECMAScript 的 i / m / s / u 标记；不得用另一语言的语法近似替代。
+CSS 支持元素名、class、id、属性存在及 `=`、`!=`、`^=`、`$=`、`*=`、`~=` 匹配，后代、子代、相邻 / 通用兄弟、逗号组合，以及结构伪类和 `:not`、`:has`、`:contains`、`:containsOwn`、`:containsData`、`:matches`、`:matchesOwn`、`:eq`、`:lt`、`:gt`。这些选择器由 SwiftSoup 执行；未知伪类和伪元素仍须报 unsupported_feature，不回退成空结果。xpath-v1 固定 XPath 1.0，jsonpath-v1 固定 RFC 9535，regex-v1 固定 ECMAScript 的 i / m / s / u 标记；不得用另一语言的语法近似替代。
 
 能力不表示任意同名库完全兼容。宿主发布能力清单及对应行为样本后才能声明支持。必需能力缺失在请求前报告；共享模块可通过 nori.capabilities.has 查询当前站点已声明且宿主支持的能力。源请求缺少声明的 SDK 能力时同样失败，不能自动申请更宽权限。
 

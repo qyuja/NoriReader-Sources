@@ -1,4 +1,4 @@
-// Nori Source v2 draft example. All endpoints and API shapes are fictional.
+// Nori JSON 源 draft example. All endpoints and API shapes are fictional.
 // This module is also embedded verbatim in script-aggregate.nori.json.
 
 function payload(response, ctx) {

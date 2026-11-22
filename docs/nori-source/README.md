@@ -1,6 +1,6 @@
-# Nori Source v2 作者资料
+# Nori JSON 源作者资料
 
-第一次制作源，请从 [完整制作指南](../nori-source-authoring.md) 开始。当前资料对应协议 v2、宿主 SDK 2.1.0；具体 App 是否支持某项能力，以安装版本为准。
+第一次制作源，请从 [完整制作指南](../nori-source-authoring.md) 开始。当前资料描述 Nori JSON 源；具体 App 是否支持某项能力，以实际安装的 App 和 [host.json](host.json) 为准。
 
 | 文件 | 用途 |
 | --- | --- |
@@ -16,6 +16,6 @@
 | [html.nori.json](examples/html.nori.json) / [json-api.nori.json](examples/json-api.nori.json) | plan 请求与提取示例 |
 | [aggregate.source.yaml](examples/aggregate.source.yaml) / [aggregate.js](examples/aggregate.js) | 登录、混合内容、在线与文件版、临时资源解析 |
 
-网络示例使用虚构接口，静态有效不代表真实站点可读。仓库中的旧 JS 源仍由 [旧协议文档](../js-sources.md) 描述，与 v2 SDK 分开。
+网络示例使用虚构接口，静态有效不代表真实站点可读。模板中的 ES 模块在打包时嵌入 JSON，不单独作为源导入。
 
 本目录的 Schema、SDK 类型、能力清单及静态工具来自 NoriReader 当前作者接口，不包含 App 私有实现。公开仓库提供 Python 工具；Swift 的 `NoriSourceTool` / `SourceProbe` 需要 App 工程和对应构建环境。

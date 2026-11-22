@@ -1,4 +1,4 @@
-"""Read v2 author files and embed local modules without changing their code."""
+"""Read Nori JSON author files and embed local modules without changing their code."""
 
 from __future__ import annotations
 

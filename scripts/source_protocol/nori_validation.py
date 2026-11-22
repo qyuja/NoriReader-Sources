@@ -1,4 +1,4 @@
-"""Schema and cross-field checks for v2 packages; no selectors or scripts run."""
+"""Schema and cross-field checks for Nori JSON packages; no selectors or scripts run."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ from .javascript import JavaScriptAnalysis
 from .validation import pointer
 
 
-SCHEMA_PATH = Path(__file__).resolve().parents[2] / "docs/nori-source-v2/schema.json"
-HOST_PATH = Path(__file__).resolve().parents[2] / "docs/nori-source-v2/host.json"
+SCHEMA_PATH = Path(__file__).resolve().parents[2] / "docs/nori-source/schema.json"
+HOST_PATH = Path(__file__).resolve().parents[2] / "docs/nori-source/host.json"
 HOST_DESCRIPTION = json.loads(HOST_PATH.read_text(encoding="utf-8"))
 HOST_CAPABILITIES = set(HOST_DESCRIPTION["capabilities"])
 KNOWN_CAPABILITIES = HOST_CAPABILITIES
@@ -667,7 +667,7 @@ def validate_package(document) -> PackageValidation:
     result = PackageValidation()
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     result.diagnostics = [
-        issue(pointer(error.absolute_path), "字段不符合 v2 Schema（" + error.validator + "）", stage="schema")
+        issue(pointer(error.absolute_path), "字段不符合 Nori JSON Schema（" + error.validator + "）", stage="schema")
         for error in sorted(validator.iter_errors(document), key=lambda error: pointer(error.absolute_path))
     ]
     result.checks["schema"] = "passed" if result.valid else "failed"

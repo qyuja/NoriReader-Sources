@@ -1,6 +1,6 @@
-# Nori 源制作完整指南
+# Nori JSON 源制作完整指南
 
-适用基线：**Nori Source v2、宿主 SDK 2.1.0**。核对日期：2026-11-22。
+本文对应当前 Nori JSON 源格式。宿主支持的能力以 [host.json](nori-source/host.json) 和实际安装的 App 为准。核对日期：2026-11-22。
 
 书源负责告诉随阅“去哪请求、怎样提取、哪些内容属于同一本书”。列表、阅读器、翻页、主题、账号保管、书架和阅读进度由 App 处理。制作一个在线源，就是把网站接到这条流程：
 
@@ -41,40 +41,38 @@
 | 文件 | 用途 | 新源怎样选 |
 | --- | --- | --- |
 | `source.yaml` + `*.js` | 作者编辑的配置和模块 | 推荐这样编写 |
-| `*.nori.json`，`format: nori-source`、`schemaVersion: 2` | 自包含的 Nori v2 发布包 | 交给 App 导入 |
-| `format: nori-collection`、`schemaVersion: 1` | 把多个独立源装进一个 JSON 文件 | 用于“小说 / 漫画”等分组 |
-| 原始 Legado JSON | 通过 Legado SDK 执行的旧源 | 沿用独立格式，不冒充 v2 |
-| `var source = …`、旧 `index.config.js` | 随阅原有 JS 接口 | 查阅 [旧 JS 文档](js-sources.md) |
+| `*.nori.json`，`format: nori-source`、`schemaVersion: 2` | 自包含的 Nori JSON 源发布包 | 交给 App 导入 |
+| `format: nori-collection`、`schemaVersion: 1` | 把多个独立源装进一个 JSON 文件 | 用于“小说 / 漫画 / NSFW”等分组 |
 
-Nori v2 操作返回 `Book / Edition / Chapter / Document`，使用 `nori.http` 等 SDK。不要把旧 JS 的 `manifest.apiVersion`、`source.catalog()`、Legado 的 `java.ajax()` 或 `ctx.legado` 混进新源。
+Nori JSON 源的操作返回 `Book / Edition / Chapter / Document`，使用 `nori.http` 等 SDK。
 
-`schemaVersion: 2` 是格式版本，`version: "1.0.0"` 是你自己源的版本，`sdkVersion: "2.1.0"` 是宿主能力基线，三者含义不同。用户安装的 App 也要支持声明的能力；本仓库清单通过不代表旧版 App 同样支持。
+`schemaVersion` 标识文件结构，`version` 标识源的更新，`sdkVersion` 标识宿主能力基线。字段值和 `requires` 中的能力名称按 Schema 与宿主清单填写；用户安装的 App 也要支持所声明的能力。
 
 ## 2. 准备工具并跑通离线源
 
-以下命令在本公开书源仓库根目录执行。需要 Git、Python 3.10+ 和已安装的 `uv`。也可以自行创建 Python 虚拟环境，安装 `scripts/source_protocol/requirements-v2.txt` 后，把 `uv run --with-requirements …` 换成该环境的 `python`。
+以下命令在本公开书源仓库根目录执行。需要 Git、Python 3.10+ 和已安装的 `uv`。也可以自行创建 Python 虚拟环境，安装 `scripts/source_protocol/requirements.txt` 后，把 `uv run --with-requirements …` 换成该环境的 `python`。
 
 ```sh
 git clone https://github.com/qyuja/NoriReader-Sources.git
 cd NoriReader-Sources
 
-uv run --with-requirements scripts/source_protocol/requirements-v2.txt \
+uv run --with-requirements scripts/source_protocol/requirements.txt \
   scripts/pack_source.py capabilities
 
-uv run --with-requirements scripts/source_protocol/requirements-v2.txt \
+uv run --with-requirements scripts/source_protocol/requirements.txt \
   scripts/pack_source.py init work/my-source \
   --id org.example.myreader --name 我的书源
 
-uv run --with-requirements scripts/source_protocol/requirements-v2.txt \
+uv run --with-requirements scripts/source_protocol/requirements.txt \
   scripts/pack_source.py pack work/my-source -o dist/my-source.nori.json
 
-uv run --with-requirements scripts/source_protocol/requirements-v2.txt \
+uv run --with-requirements scripts/source_protocol/requirements.txt \
   scripts/pack_source.py validate dist/my-source.nori.json
 ```
 
 `init` 的目标目录必须尚不存在。它生成可运行的离线小说源、类型声明、作者 Schema 和编辑器配置。先把 `dist/my-source.nori.json` 导入随阅，搜索“山海”、打开详情、查看两章目录并试读，再开始修改真实网站。
 
-发布包示例也可直接从 [offline.nori.json](nori-source-v2/examples/offline.nori.json) 下载。在支持 v2 的 App 中，进入管理书源的导入入口，选择 JSON 文件，或粘贴该文件的 HTTPS Raw 地址。YAML 和分开的 JS 是作者输入，不能分别作为 v2 发布包导入。
+发布包示例也可直接从 [offline.nori.json](nori-source/examples/offline.nori.json) 下载。在支持 Nori JSON 的 App 中，进入管理书源的导入入口，选择 JSON 文件，或粘贴该文件的 HTTPS Raw 地址。YAML 和分开的 JS 是作者输入，不能分别作为 Nori JSON 发布包导入。
 
 公开书源仓库提供 Python 静态打包器，**不包含 App 的 Swift/QuickJS 执行器**。后文 `NoriSourceTool`、`SourceProbe` 命令只供有 NoriReader App 工程访问权限的开发者使用；其他作者用静态检查和 App 内试读完成联调。不要在本仓库直接执行 `swift run NoriSourceTool`。
 
@@ -112,7 +110,7 @@ dist/
   my-source.nori.report.json  打包报告，不导入 App
 ```
 
-从零接 HTML 小说站时，可以复制 [web-novel/source.yaml](nori-source-v2/examples/web-novel/source.yaml) 和 [reader.js](nori-source-v2/examples/web-novel/reader.js)。这两个文件包含搜索、分类、动态筛选定义、详情、章节和正文的完整函数；需要按目标网站替换域名、路径和选择器。
+从零接 HTML 小说站时，可以复制 [web-novel/source.yaml](nori-source/examples/web-novel/source.yaml) 和 [reader.js](nori-source/examples/web-novel/reader.js)。这两个文件包含搜索、分类、动态筛选定义、详情、章节和正文的完整函数；需要按目标网站替换域名、路径和选择器。
 
 最小结构如下，完整值以配套文件为准：
 
@@ -204,7 +202,7 @@ const html = response.body;
 | URL 工具 | `url-v1` |
 | 正文块构造 | `content-v1`；HTML 另需 `html-v1` |
 | 持久状态 / 临时缓存 | `state-v1` / `cache-v1` |
-| 其他能力 | 查 [SDK](nori-source-v2/sdk.md) 和 [host.json](nori-source-v2/host.json) |
+| 其他能力 | 查 [SDK](nori-source/sdk.md) 和 [host.json](nori-source/host.json) |
 
 能力可写在根或站点的 `requires` 中，两者取并集。通常把 `core-v2` 放根，站点特有能力放站点。JS 调用需要的能力不会由打包器自动补齐。
 
@@ -390,7 +388,7 @@ EPUB 等文件版本放在详情的 editions 中：
 } }
 ```
 
-`resolveResource` 用稳定 fileID 换下载地址，原生加载器负责下载和打开。v2 的文件模型不是旧 JS 的 `resources` 数组；也不把旧网盘 driveFile / driveShare 对象原样放入 Edition。网盘账号与分享转存另按现有网盘接口接入。
+`resolveResource` 用稳定 fileID 换下载地址，原生加载器负责下载和打开。文件资源通过 Edition 的 resource 声明；网盘账号与分享转存另按现有网盘接口接入。
 
 ## 12. 分页与完整章节
 
@@ -480,13 +478,13 @@ sessions:
 
 站点要求把令牌放 query/form/json 时，声明 `auth-request-v1` 并使用 `credentialBindings`；资源只支持 query 绑定。源脚本拿不到原生令牌读回接口。script 登录中的 `nori.credentials` 和 `nori.authentication.storeCredential()` 仅在认证阶段有效。
 
-登录完成要用 check 证明 authenticated，不以“有 Cookie”判断成功。不要把测试账号、Cookie、密码、令牌放进源包、locator、state、cache、日志或 GitHub。完整配置见 [aggregate.source.yaml](nori-source-v2/examples/aggregate.source.yaml)。
+登录完成要用 check 证明 authenticated，不以“有 Cookie”判断成功。不要把测试账号、Cookie、密码、令牌放进源包、locator、state、cache、日志或 GitHub。完整配置见 [aggregate.source.yaml](nori-source/examples/aggregate.source.yaml)。
 
 ## 15. 选择 plan 或 JS
 
 简单的“一次请求 → 字段提取”适合 plan。多请求、循环、解密、章内合页或复杂分支使用 JS 操作。同站点可按操作混用，两者返回相同模型。
 
-plan 需要 `request / response / result`，列表还需要 `pagination`；与 script 互斥。最外层 result 用 `fields` 明确构造模型。完整示例见 [HTML plan](nori-source-v2/examples/html.nori.json) 和 [JSON API plan](nori-source-v2/examples/json-api.nori.json)。
+plan 需要 `request / response / result`，列表还需要 `pagination`；与 script 互斥。最外层 result 用 `fields` 明确构造模型。完整示例见 [HTML plan](nori-source/examples/html.nori.json) 和 [JSON API plan](nori-source/examples/json-api.nori.json)。
 
 表达式速查：
 
@@ -508,7 +506,7 @@ plan 中的字段 script 必须同步，只处理当前值，不能请求网络�
 
 请求可指定 `charset:'gbk'` 等实际字符集；缺省按 HTTP charset、UTF-8 解码。乱码先查原始字节和编码，不用字符串替换掩盖解码问题。
 
-SDK 提供 codec 的 Base64、编码和摘要，以及 crypto 的 HMAC、AES、DES、Ed25519、RSA 等已声明能力。二进制使用 Uint8Array，字符串通过 codec 明确编码，不能猜某段字符串到底是 Hex、Base64 还是原始密钥。算法、密钥格式和所需能力见 [SDK](nori-source-v2/sdk.md)。
+SDK 提供 codec 的 Base64、编码和摘要，以及 crypto 的 HMAC、AES、DES、Ed25519、RSA 等已声明能力。二进制使用 Uint8Array，字符串通过 codec 明确编码，不能猜某段字符串到底是 Hex、Base64 还是原始密钥。算法、密钥格式和所需能力见 [SDK](nori-source/sdk.md)。
 
 `state` 是非敏感持久状态；`cache` 是有到期时间的临时 JSON。两者按包、站点、版本和账号隔离，只有操作成功并通过结果校验才提交。不要用它们保存阅读位置或账号秘密。
 
@@ -520,7 +518,7 @@ if (data === undefined) {
 }
 ```
 
-当前宿主主要上限：每次操作墙钟 30 秒、JS 执行 10 秒、12 次 SDK 请求、单响应 4 MiB、VM 内存 32 MiB。policy 只能收紧；当前同站点操作和 SDK 网络桥串行，不承诺 Promise.all 并发。原生图片另限 20 MiB，文件下载沿用 80 MiB。预算以 [host.json](nori-source-v2/host.json) 和对应 App 为准。
+当前宿主主要上限：每次操作墙钟 30 秒、JS 执行 10 秒、12 次 SDK 请求、单响应 4 MiB、VM 内存 32 MiB。policy 只能收紧；当前同站点操作和 SDK 网络桥串行，不承诺 Promise.all 并发。原生图片另限 20 MiB，文件下载沿用 80 MiB。预算以 [host.json](nori-source/host.json) 和对应 App 为准。
 
 DOM/ZIP 句柄只在本次调用中有效，用完释放。SDK 不提供文件系统、Node、浏览器 DOM、任意原生 UI 或全局 fetch/setTimeout。需要等待时使用声明了 `task-v1` 的 `nori.task.sleep()`。
 
@@ -574,7 +572,7 @@ swift run SourceProbe --audit-source /tmp/my-source.nori.json /tmp/audit.json bo
 swift run SourceProbe --gateway-read /tmp/my-source.nori.json books 关键词
 ```
 
-`--audit-source` 对原生 v2 当前检查操作模型，不保证正文图已下载。`--gateway-read` 走实际 ReadingGateway 并检查首张图下载与 ImageIO 解码；仍不能代替全章每张图、多个作品和真机验证。还要阅读输出：工具打印图片失败时，不应只凭进程退出码判定成功。
+`--audit-source` 对原生 Nori JSON 当前检查操作模型，不保证正文图已下载。`--gateway-read` 走实际 ReadingGateway 并检查首张图下载与 ImageIO 解码；仍不能代替全章每张图、多个作品和真机验证。还要阅读输出：工具打印图片失败时，不应只凭进程退出码判定成功。
 
 ## 18. 定位常见错误
 
@@ -600,14 +598,21 @@ swift run SourceProbe --gateway-read /tmp/my-source.nori.json books 关键词
 
 合集是安装容器，里面是已经打包的完整子源对象。每个子源继续独立执行、设置、登录、开关和保存阅读身份。不要把多个源的 JS 粘成一个函数，也不能把 YAML 文件名、URL 或 JSON 数组当成一个成员。
 
-下面的生成脚本假设你已在 dist 生成小说和漫画两份包：
+按内容把源分为“小说”“漫画”“NSFW”；NSFW 同时容纳成人小说与成人漫画。以原源明确的成人标记和站点实际内容为依据，不仅凭普通小说站出现成人广告就判断正文类型。仅修改分组时使用合集成员的 `group`，保留子源 ID、模块和站点配置。
+
+下面的生成脚本假设你已在 dist 生成小说、漫画、成人小说和成人漫画四份包：
 
 ```python
 import json
 from pathlib import Path
 
 sources = []
-for filename, group in [('novel.nori.json', '小说'), ('comic.nori.json', '漫画')]:
+for filename, group in [
+    ('novel.nori.json', '小说'),
+    ('comic.nori.json', '漫画'),
+    ('adult-novel.nori.json', 'NSFW'),
+    ('adult-comic.nori.json', 'NSFW'),
+]:
     source = json.loads((Path('dist') / filename).read_text(encoding='utf-8'))
     source['group'] = group
     sources.append(source)
@@ -615,7 +620,7 @@ for filename, group in [('novel.nori.json', '小说'), ('comic.nori.json', '漫�
 collection = {
     'format': 'nori-collection', 'schemaVersion': 1,
     'id': 'org.example.mycollection', 'name': '我的书源合集', 'version': '1.0.0',
-    'groups': ['小说', '漫画'], 'sources': sources
+    'groups': ['小说', '漫画', 'NSFW'], 'sources': sources
 }
 Path('dist/nori-sources.nori.json').write_text(
     json.dumps(collection, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
@@ -623,7 +628,7 @@ Path('dist/nori-sources.nori.json').write_text(
 
 `sources[i].group` 要和顶层 groups 精确匹配；未设置或未匹配的成员位于顶层。站点自己的 `presentation.group` 与合集成员 group 负责不同层级。子源 ID 不能重复，合集 ID 不能等于成员 ID，不允许嵌套合集。
 
-`pack_source.py validate` 检查单个 v2 源，不接受整个合集。先逐包验证，再用 [合集 Schema](source-collections/schema.json) 检查容器，并在 App 或 `SourceProbe --inspect-source` 检查各成员导入。分组元数据由合集提取，不要把带 group 的成员直接当独立源交给 v2 Schema。
+`pack_source.py validate` 检查单个 Nori JSON 源，不接受整个合集。先逐包验证，再用 [合集 Schema](source-collections/schema.json) 检查容器，并在 App 或 `SourceProbe --inspect-source` 检查各成员导入。分组元数据由合集提取，不要把带 group 的成员直接当独立源交给 Nori JSON Schema。
 
 同 ID 合集的**普通添加是追加**：新成员加入，重复成员保留本机已有版本，文件中没出现的旧成员仍保留。明确“刷新 / 从文件更新 / 从 URL 更新”才按更新文件替换；完整更新成功时才会移除缺席成员。部分成员失败会保留相关旧安装，具体见 [合集说明](source-collections/README.md)。
 
@@ -656,13 +661,13 @@ GitHub `/blob/main/…` 是网页，不是源文件地址；`*.report.json` 也�
 
 ## 21. 参考文件
 
-- [SDK 使用说明](nori-source-v2/sdk.md)与 [TypeScript 类型](nori-source-v2/sdk.d.ts)：可调用方法、输入输出。
-- [执行契约](nori-source-v2/execution.md)：能力、权限、分页、生命周期和错误。
-- [发布 Schema](nori-source-v2/schema.json)、[作者 Schema](nori-source-v2/authoring.schema.json)与 [宿主清单](nori-source-v2/host.json)：结构和支持基线。
-- [打包器说明](nori-source-v2/packager.md)：命令、静态检查范围、报告和模块约束。
-- [离线源作者配置](nori-source-v2/examples/offline.source.yaml)、[模块](nori-source-v2/examples/offline.js)和 [发布包](nori-source-v2/examples/offline.nori.json)：无需网络即可导入试读。
-- [HTML 小说站作者项目](nori-source-v2/examples/web-novel/source.yaml)及 [模块](nori-source-v2/examples/web-novel/reader.js)：完整在线操作模板。
-- [HTML plan](nori-source-v2/examples/html.nori.json)、[JSON API plan](nori-source-v2/examples/json-api.nori.json)、[认证聚合示例](nori-source-v2/examples/aggregate.source.yaml)：虚构服务的进阶参考。
+- [SDK 使用说明](nori-source/sdk.md)与 [TypeScript 类型](nori-source/sdk.d.ts)：可调用方法、输入输出。
+- [执行契约](nori-source/execution.md)：能力、权限、分页、生命周期和错误。
+- [发布 Schema](nori-source/schema.json)、[作者 Schema](nori-source/authoring.schema.json)与 [宿主清单](nori-source/host.json)：结构和支持基线。
+- [打包器说明](nori-source/packager.md)：命令、静态检查范围、报告和模块约束。
+- [离线源作者配置](nori-source/examples/offline.source.yaml)、[模块](nori-source/examples/offline.js)和 [发布包](nori-source/examples/offline.nori.json)：无需网络即可导入试读。
+- [HTML 小说站作者项目](nori-source/examples/web-novel/source.yaml)及 [模块](nori-source/examples/web-novel/reader.js)：完整在线操作模板。
+- [HTML plan](nori-source/examples/html.nori.json)、[JSON API plan](nori-source/examples/json-api.nori.json)、[认证聚合示例](nori-source/examples/aggregate.source.yaml)：虚构服务的进阶参考。
 - [分组合集说明](source-collections/README.md)与 [容器 Schema](source-collections/schema.json)。
 
 示例与规范描述的是接口契约。静态可打包、离线可运行、真实网站可读是三项不同结果；发布时按实际完成的检查记录。

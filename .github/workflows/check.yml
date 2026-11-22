@@ -1,4 +1,4 @@
-name: Check sources
+name: Check Nori documentation and examples
 
 on: [push, pull_request]
 
@@ -10,14 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-python@v5
         with:
-          node-version: '22'
-      - name: Generate source packages
-        run: python3 scripts/build_source.py
-      - name: Check sources and configuration entries
-        run: node scripts/check_sources.mjs
-      - name: Check generated files are committed
-        run: git diff --exit-code -- index.js novels.js cloud-drives.js
+          python-version: '3.12'
+      - name: Install authoring dependencies
+        run: python -m pip install -r scripts/source_protocol/requirements.txt
+      - name: Check documentation and JSON examples
+        run: python scripts/check_sources.py
+      - name: Exercise the documented authoring flow
+        run: |
+          python scripts/pack_source.py init artifacts/example --id org.example.check --name 示例源
+          python scripts/pack_source.py pack artifacts/example -o artifacts/example.nori.json
+          python scripts/pack_source.py validate artifacts/example.nori.json
       - name: Check whitespace
         run: git diff --check

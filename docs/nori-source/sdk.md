@@ -1,6 +1,6 @@
-# Nori 宿主 SDK 2.1.0
+# Nori 宿主 SDK
 
-Nori Source v2 的正式接口由 [sdk.d.ts](sdk.d.ts) 定义，App 与作者工具共用[宿主能力清单](host.json)。本页列出的接口有原生实现；本目录只发布正式 SDK，不提供旧客户端的隐藏宿主。
+Nori JSON 源的接口由 [sdk.d.ts](sdk.d.ts) 定义，App 与作者工具共用[宿主能力清单](host.json)。本页列出的接口有原生实现。
 
 操作函数接收 `(input, nori)`。`nori` 是调用上下文参数，旧示例中的参数名 `ctx` 具有相同含义。没有全局 `java`、`source`、Node 或文件系统。代码在 App 内的 QuickJS 执行，不依赖 Java 环境。
 

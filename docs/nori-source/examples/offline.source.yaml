@@ -1,7 +1,7 @@
 format: nori-source
 schemaVersion: 2
 id: org.norireader.example.offline
-name: v2 离线示例
+name: Nori JSON 离线示例
 version: 1.0.0
 description: 用于确认导入、搜索、目录续页、阅读版本和原生阅读器的示例，不访问网络。
 requires: [core-v2]

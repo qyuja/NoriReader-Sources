@@ -2,11 +2,11 @@
 
 合集是 `format: "nori-collection"`、`schemaVersion: 1` 的 JSON 安装容器。完整制作过程和生成脚本见 [制作指南](../nori-source-authoring.md#19-制作小说漫画分组合集)，结构见 [schema.json](schema.json)。
 
-根字段 `format / schemaVersion / id / name / version / sources` 必填。`groups` 可列出“小说”“漫画”等组名，每个完整子源对象用 `group` 选择其中一个组；缺少或未匹配的 group 显示在顶层。子源对象先提取 group，再按自己的协议校验，group 不进入执行程序与账号指纹。
+根字段 `format / schemaVersion / id / name / version / sources` 必填。`groups` 可列出“小说”“漫画”“NSFW”等组名，每个完整子源对象用 `group` 选择其中一个组；NSFW 同时容纳成人小说和成人漫画。缺少或未匹配的 group 显示在顶层。子源对象先提取 group，再按自己的协议校验，group 不进入执行程序与账号指纹。
 
-sources 必须是非空的单源对象数组，不允许嵌套合集、成员数组、远程 URL 或作者 YAML 文件路径。原生 Nori v2 成员要先打包为完整发布对象。每个子源 ID 唯一、不能等于合集 ID，一个子源不能同时属于多个安装。
+sources 必须是非空的单源对象数组，不允许嵌套合集、成员数组、远程 URL 或作者 YAML 文件路径。Nori JSON 源成员要先打包为完整发布对象。每个子源 ID 唯一、不能等于合集 ID，一个子源不能同时属于多个安装。
 
-容器可以内嵌原生 Nori 或原始 Legado JSON；成员使用各自 SDK，账号、设置、开关、书籍与章节身份继续独立。新制作的纯 Nori 合集只放 Nori 发布对象即可。合集不会按同名书籍合并阅读记录，也不负责转换旧格式。
+制作 Nori JSON 合集时放入完整 Nori 发布对象；成员的账号、设置、开关、书籍与章节身份继续独立。合集不会按同名书籍合并阅读记录。仅调整分组时保留子源 ID、模块和站点配置。
 
 | 操作 | 行为 |
 | --- | --- |

@@ -1,8 +1,8 @@
-// A self-contained source for trying the native v2 flow without a website or account.
+// A self-contained source for trying the native Nori JSON flow without a website or account.
 /** @type {Nori.Book} */
 const book = {
   id: 'mountain-notes', title: '山海札记', kind: 'novel', authors: ['随阅'],
-  summary: '这是随阅 v2 协议的离线示例。可以搜索、切换阅读版本、查看分卷目录并阅读两章原创示例文字。',
+  summary: '这是随阅 Nori JSON 协议的离线示例。可以搜索、切换阅读版本、查看分卷目录并阅读两章原创示例文字。',
   metadata: { status: 'completed', chapterCount: 2, tags: ['协议示例'] }
 };
 /** @type {Nori.Chapter} */

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://norireader.org/schemas/nori-source-v2-authoring.json",
-  "title": "Nori Source v2 authoring project",
+  "$id": "urn:norireader:source:2",
+  "title": "Nori JSON 源 (draft)",
   "description": "Independent source package contract. Structural validation does not imply host support or website behavior.",
   "type": "object",
   "additionalProperties": false,
@@ -55,28 +55,8 @@
         "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9_./-]+\\.js$"
       },
       "additionalProperties": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "file"
-            ],
-            "properties": {
-              "file": {
-                "type": "string",
-                "minLength": 1
-              },
-              "exportText": {
-                "type": "string",
-                "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
-              }
-            }
-          }
-        ]
+        "type": "string",
+        "minLength": 1
       }
     },
     "provenance": {

@@ -1,4 +1,4 @@
-"""Shared JSON parsing helpers used by the public Nori v2 authoring tools."""
+"""Shared JSON parsing helpers used by the public Nori JSON 源 authoring tools."""
 
 import json
 

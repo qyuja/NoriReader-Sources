@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pack and statically validate Nori Source v2 without executing source code."""
+"""Pack and statically validate Nori JSON sources without executing source code."""
 
 from __future__ import annotations
 
@@ -13,12 +13,12 @@ import tempfile
 
 try:
     from source_protocol.authoring import AuthoringError, MAX_SOURCE_BYTES, SourceInputs, canonical_bytes
-    from source_protocol.v2_validation import HOST_DESCRIPTION, HOST_CAPABILITIES, KNOWN_CAPABILITIES, PackageValidation, issue, validate_package
+    from source_protocol.nori_validation import HOST_DESCRIPTION, HOST_CAPABILITIES, KNOWN_CAPABILITIES, PackageValidation, issue, validate_package
 except ModuleNotFoundError as error:
     if error.name not in {"jsonschema", "yaml", "tree_sitter", "tree_sitter_javascript"}:
         raise
     print(
-        "缺少 v2 工具依赖。请使用 uv run --with-requirements scripts/source_protocol/requirements-v2.txt "
+        "缺少 Nori JSON 工具依赖。请使用 uv run --with-requirements scripts/source_protocol/requirements.txt "
         "scripts/pack_source.py，或在虚拟环境中安装该 requirements 文件。",
         file=sys.stderr,
     )
@@ -31,7 +31,7 @@ TOOL_VERSION = "0.2.0"
 def parser() -> argparse.ArgumentParser:
     command = argparse.ArgumentParser(description=__doc__)
     actions = command.add_subparsers(dest="action", required=True)
-    pack = actions.add_parser("pack", help="把作者 YAML / JSON 和本地 JS 模块打包为 v2 JSON")
+    pack = actions.add_parser("pack", help="把作者 YAML / JSON 和本地 JS 模块打包为 Nori JSON 源")
     pack.add_argument("input", type=Path, help="配置文件或含唯一 source.yaml / source.yml / source.json 的目录")
     pack.add_argument("-o", "--output", type=Path, required=True)
     pack.add_argument("--report", type=Path, help="默认与输出同名的 .report.json")
@@ -43,7 +43,7 @@ def parser() -> argparse.ArgumentParser:
     for action in (pack, validate):
         action.add_argument("--target", choices=("current", "protocol"), default="current", help="默认检查当前 App 能力；protocol 仅供未实现扩展草稿")
     actions.add_parser("capabilities", help="输出与 App 共用的宿主 SDK 能力和预算")
-    create = actions.add_parser("init", help="创建可直接打包与运行的原生 v2 作者项目")
+    create = actions.add_parser("init", help="创建可直接打包与运行的原生 Nori JSON 作者项目")
     create.add_argument("directory", type=Path)
     create.add_argument("--id", default="org.example.reader")
     create.add_argument("--name", default="我的 Nori 书源")
@@ -85,13 +85,13 @@ def main() -> int:
         if arguments.directory.exists():
             print("目标目录已存在，未覆盖任何文件", file=sys.stderr)
             return 2
-        template = Path(__file__).resolve().parents[1] / "docs/nori-source-v2/examples"
+        template = Path(__file__).resolve().parents[1] / "docs/nori-source/examples"
         try:
             # Start from a complete native source rather than leaving empty operation stubs.
             import yaml
             document = yaml.safe_load((template / "offline.source.yaml").read_text(encoding="utf-8"))
             document["id"], document["name"] = arguments.id, arguments.name
-            document["description"] = "原生 Nori v2 作者项目"
+            document["description"] = "Nori JSON 源作者项目"
             arguments.directory.mkdir(parents=True)
             (arguments.directory / "source.yaml").write_text("# yaml-language-server: $schema=./nori-authoring.schema.json\n" + yaml.safe_dump(document, allow_unicode=True, sort_keys=False), encoding="utf-8")
             (arguments.directory / "offline.js").write_bytes((template / "offline.js").read_bytes())
